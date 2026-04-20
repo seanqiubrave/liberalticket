@@ -972,14 +972,16 @@ Step 1: 检查浏览器支持...</div>
         <div style="display: flex; align-items: center; gap: 10px;">
           <div style="width:10px; height:10px; border-radius:50%; background: var(--sage); animation: pulse 1.2s ease-in-out infinite;"></div>
           <div style="flex: 1;">
-            <div style="font-size:13px; font-weight:500;">正在扫描中… · Scanning</div>
-            <div style="font-size:11px; opacity:0.7; margin-top:2px;">对准 QR 码，保持距离 10-20 cm</div>
+            <div id="scan-status-text" style="font-size:13px; font-weight:500;">正在扫描中…</div>
+            <div style="font-size:11px; opacity:0.7; margin-top:2px;">对准 QR 码，保持距离 10-20 cm，避开屏幕反光</div>
           </div>
         </div>
       </div>
       <style>@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }</style>
     `;
     lastScanTime = 0;
+    scanAttempts = 0;
+    scanStartTime = Date.now();
     scanLoop();
   } catch(err) {
     console.error('Camera error:', err);
@@ -1047,6 +1049,9 @@ function stopScanner() {
   scanBtn.classList.add('btn-primary');
 }
 
+let scanAttempts = 0;
+let scanStartTime = 0;
+
 function scanLoop() {
   if (!scanning) return;
   const video = document.getElementById('scanner-video');
@@ -1059,11 +1064,13 @@ function scanLoop() {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(video, 0, 0, vw, vh);
     try {
+      scanAttempts++;
+
       // Full frame scan
       const full = ctx.getImageData(0, 0, vw, vh);
       let code = jsQR(full.data, vw, vh, { inversionAttempts: 'attemptBoth' });
 
-      // If full scan failed, try center crop (often more reliable for QR in middle of frame)
+      // Try center crop (often more reliable when QR is centered)
       if (!code) {
         const side = Math.floor(Math.min(vw, vh) * 0.75);
         const cx = Math.floor((vw - side) / 2);
@@ -1072,12 +1079,34 @@ function scanLoop() {
         code = jsQR(crop.data, side, side, { inversionAttempts: 'attemptBoth' });
       }
 
+      // Last resort: enhance contrast (helps with screen glare / moiré)
+      if (!code && scanAttempts % 3 === 0) {
+        const enhanced = ctx.getImageData(0, 0, vw, vh);
+        const d = enhanced.data;
+        for (let i = 0; i < d.length; i += 4) {
+          // Convert to grayscale + threshold-ish enhance
+          const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+          const val = gray > 128 ? 255 : 0;
+          d[i] = d[i+1] = d[i+2] = val;
+        }
+        code = jsQR(d, vw, vh, { inversionAttempts: 'attemptBoth' });
+      }
+
+      // Update the status ticker every 30 frames (~1 sec)
+      if (scanAttempts % 30 === 0) {
+        const elapsed = Math.floor((Date.now() - scanStartTime) / 1000);
+        const statusEl = document.getElementById('scan-status-text');
+        if (statusEl) {
+          statusEl.innerHTML = `正在扫描中… · ${scanAttempts} frames · ${elapsed}s`;
+        }
+      }
+
       if (code && code.data && Date.now() - lastScanTime > 1500) {
         lastScanTime = Date.now();
         handleScanResult(code.data);
         return;
       }
-    } catch(e) { /* keep looping */ }
+    } catch(e) {}
   }
   rafId = requestAnimationFrame(scanLoop);
 }
