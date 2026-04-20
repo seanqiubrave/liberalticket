@@ -911,17 +911,34 @@ scanBtn.addEventListener('click', () => {
 });
 
 async function startScanner() {
+  // Show immediate feedback so user knows button click was received
+  const box = document.getElementById('scan-result');
+  box.innerHTML = `
+    <div class="scan-result" style="background: rgba(107, 127, 90, 0.1); border-color: var(--sage); color: var(--sage-dark);">
+      <div class="result-icon">⟳ STARTING...</div>
+      <div class="result-title" style="font-size:18px;">正在启动摄像头</div>
+      <div class="result-detail" id="diag-text" style="font-size:12px; white-space:pre-wrap;">
+Step 1: 检查浏览器支持...</div>
+    </div>
+  `;
+  const diag = document.getElementById('diag-text');
+  const log = (msg) => { diag.textContent += '\n' + msg; };
+
   // Pre-flight checks
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     showCameraError('此浏览器不支持摄像头 API',
-      '请确认：\n• 用的是 Safari / Chrome（不是微信/QQ 内置浏览器）\n• 网址是 https:// 开头\n• iOS 系统版本 ≥ 11');
+      '请确认：\n• 用的是 Safari / Chrome（不是微信/QQ 内置浏览器）\n• 网址是 https:// 开头\n• iOS 系统版本 ≥ 11\n\n当前 User-Agent:\n' + navigator.userAgent);
     return;
   }
+  log('✓ Step 1: 浏览器支持 API');
+
   if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
     showCameraError('需要 HTTPS 才能使用摄像头',
       `当前地址：${location.protocol}//${location.hostname}\n\n浏览器安全策略只允许 HTTPS 站点访问摄像头。请通过 https:// 开头的链接打开此页面。`);
     return;
   }
+  log('✓ Step 2: HTTPS 正常');
+  log('Step 3: 正在请求摄像头权限（应该弹出允许/拒绝对话框）...');
 
   try {
     videoStream = await navigator.mediaDevices.getUserMedia({
@@ -932,12 +949,17 @@ async function startScanner() {
       },
       audio: false
     });
+    log('✓ Step 3: 获得摄像头授权');
+    log('Step 4: 正在启动视频流...');
+
     const video = document.getElementById('scanner-video');
     video.srcObject = videoStream;
-    video.setAttribute('playsinline', 'true');   // iOS inline play
+    video.setAttribute('playsinline', 'true');
     video.setAttribute('muted', 'true');
     video.muted = true;
     await video.play();
+    log('✓ Step 4: 视频流启动成功');
+
     scanning = true;
     document.getElementById('scanner-placeholder').classList.add('hidden');
     document.getElementById('scanner-wrap').classList.remove('hidden');
@@ -950,10 +972,10 @@ async function startScanner() {
   } catch(err) {
     console.error('Camera error:', err);
     let title = '无法打开摄像头';
-    let detail = err.name + ': ' + (err.message || '');
+    let detail = `错误名称：${err.name}\n错误信息：${err.message || '(无)'}\n\nUser-Agent:\n${navigator.userAgent}`;
     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
       title = '摄像头权限被拒绝';
-      detail = 'iPhone：设置 → Safari → 摄像头 → 选"允许"或"询问"\n然后完全关闭 Safari 重试。\n\n或在地址栏左侧的 "aA" 图标里 → 网站设置 → 允许摄像头。';
+      detail = 'iPhone 解决方法：\n\n1. 打开 iPhone《设置》\n2. 往下找到 Safari → 摄像头\n3. 确保是"询问"或"允许"\n4. 回到这个页面，刷新（左上角 "aA" → 重新载入）\n5. 再点"开始扫描"\n\n如果还是不行：\n• 地址栏左侧的 "aA" 图标 → 网站设置 → 摄像头 → 允许\n• 完全关闭 Safari（上划后台）再打开';
     } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
       title = '未检测到摄像头';
       detail = '此设备没有可用的摄像头，或被其他应用占用。';
@@ -961,7 +983,6 @@ async function startScanner() {
       title = '摄像头被其他应用占用';
       detail = '请关闭正在使用摄像头的其他应用（如微信、FaceTime）再重试。';
     } else if (err.name === 'OverconstrainedError') {
-      // Fallback: try without facingMode constraint
       try {
         videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         const video = document.getElementById('scanner-video');
