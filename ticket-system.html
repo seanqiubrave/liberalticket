@@ -1,12 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>活动票务系统 · Ticket System</title>
+<title>Event Ticketing System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <!-- QR generator (qrcodejs) with CDN fallback -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -18,22 +16,22 @@
 <script>window.jsQR || document.write('<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"><\/script>');</script>
 <script>window.jsQR || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"><\/script>');</script>
 
-<!-- Library load check: show banner if anything failed -->
 <script>
   window.addEventListener('DOMContentLoaded', function() {
     const missing = [];
-    if (typeof QRCode === 'undefined') missing.push('QRCode (生成)');
-    if (typeof jsQR === 'undefined') missing.push('jsQR (扫描)');
+    if (typeof QRCode === 'undefined') missing.push('QRCode');
+    if (typeof jsQR === 'undefined') missing.push('jsQR');
     if (missing.length) {
       const banner = document.createElement('div');
-      banner.style.cssText = 'position:sticky;top:0;z-index:9999;background:#f5d5cc;color:#8b2f1e;padding:12px 16px;font-size:13px;border-bottom:2px solid #8b2f1e;';
-      banner.innerHTML = `<strong>⚠ 库加载失败:</strong> ${missing.join(', ')}<br>
-        <small style="opacity:0.8;">请检查网络连接，或换 Wi-Fi 再试。某些网络屏蔽了 CDN。</small>
-        <button onclick="location.reload()" style="margin-left:8px;padding:4px 10px;background:#8b2f1e;color:#fff;border:none;border-radius:3px;font-size:11px;">刷新重试</button>`;
+      banner.style.cssText = 'position:sticky;top:0;z-index:9999;background:#f5d5cc;color:#8b2f1e;padding:12px 16px;font-size:14px;border-bottom:2px solid #8b2f1e;';
+      banner.innerHTML = `<strong>⚠ Library load failed:</strong> ${missing.join(', ')}<br>
+        <small style="opacity:0.8;">Check your network or try different Wi-Fi.</small>
+        <button onclick="location.reload()" style="margin-left:8px;padding:4px 10px;background:#8b2f1e;color:#fff;border:none;border-radius:3px;font-size:12px;">Reload</button>`;
       document.body.insertBefore(banner, document.body.firstChild);
     }
   });
 </script>
+
 <style>
   :root {
     --ink: #1a1a1a;
@@ -43,6 +41,7 @@
     --accent-dark: #8b2f1e;
     --sage: #6b7f5a;
     --sage-dark: #3d4a32;
+    --sage-deep: #2a3524;
     --muted: #8a8578;
     --line: rgba(26, 26, 26, 0.12);
     --line-strong: rgba(26, 26, 26, 0.25);
@@ -52,9 +51,9 @@
     --warn-ink: #7a5a1a;
     --error-bg: #f5d5cc;
     --error-ink: #8b2f1e;
-    --font-display: 'Instrument Serif', Georgia, serif;
-    --font-body: 'Geist', -apple-system, system-ui, sans-serif;
-    --font-mono: 'Geist Mono', 'SF Mono', Consolas, monospace;
+    --font-display: Arial, Helvetica, sans-serif;
+    --font-body: Arial, Helvetica, sans-serif;
+    --font-mono: 'Courier New', Courier, monospace;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { overscroll-behavior: none; }
@@ -63,69 +62,77 @@
     background: var(--paper);
     color: var(--ink);
     min-height: 100vh;
-    font-size: 15px;
+    font-size: 17px;
     line-height: 1.5;
     background-image:
       radial-gradient(circle at 20% 10%, rgba(200, 75, 49, 0.04), transparent 50%),
       radial-gradient(circle at 80% 90%, rgba(107, 127, 90, 0.04), transparent 50%);
   }
+
+  /* ===== Header ===== */
   .masthead { padding: 28px 20px 20px; border-bottom: 1px solid var(--line); background: var(--paper); }
   .masthead-top {
-    display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.15em;
+    display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em;
     text-transform: uppercase; color: var(--muted);
   }
   .masthead h1 {
-    font-family: var(--font-display); font-size: 36px; font-weight: 400;
-    line-height: 1; letter-spacing: -0.01em;
+    font-family: var(--font-display); font-size: 34px; font-weight: 700;
+    line-height: 1; letter-spacing: -0.02em;
   }
-  .masthead h1 em { font-style: italic; color: var(--accent); }
+  .masthead h1 em { font-style: normal; color: var(--accent); font-weight: 700; }
   .masthead-sub {
-    margin-top: 8px; font-size: 13px; color: var(--muted);
-    font-family: var(--font-mono); letter-spacing: 0.02em;
+    margin-top: 10px; font-size: 14px; color: var(--muted);
+    font-family: var(--font-mono); letter-spacing: 0.04em;
   }
+
+  /* ===== Tabs ===== */
   .tabs {
     display: flex; border-bottom: 1px solid var(--line); background: var(--paper);
     position: sticky; top: 0; z-index: 10;
   }
   .tab {
-    flex: 1; padding: 14px 8px; background: transparent; border: none;
+    flex: 1; padding: 18px 8px; background: transparent; border: none;
     border-bottom: 2px solid transparent; font-family: var(--font-body);
-    font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer;
+    font-weight: 500; color: var(--muted); cursor: pointer;
     transition: all 0.2s ease;
+    font-size: 15px;
+    letter-spacing: 0.02em;
   }
   .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
   .tab:active { background: rgba(26, 26, 26, 0.03); }
-  .tab-label-cn { display: block; font-size: 14px; }
-  .tab-label-en {
-    display: block; font-size: 9px; font-family: var(--font-mono);
-    letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; opacity: 0.6;
-  }
+
+  /* ===== Panels ===== */
   .panel { display: none; padding: 24px 20px 80px; animation: fadeIn 0.3s ease; }
   .panel.active { display: block; }
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  .form-group { margin-bottom: 18px; }
+
+  /* ===== Forms ===== */
+  .form-group { margin-bottom: 20px; }
   .form-label {
-    display: block; font-family: var(--font-mono); font-size: 10px;
-    letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+    display: block; font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+    margin-bottom: 8px; font-weight: 500;
   }
   .form-input, .form-select, .form-textarea {
-    width: 100%; padding: 12px 14px; background: var(--paper-warm);
-    border: 1px solid var(--line); border-radius: 2px; font-family: var(--font-body);
-    font-size: 15px; color: var(--ink); transition: border-color 0.15s ease, background 0.15s ease;
+    width: 100%; padding: 14px 16px; background: var(--paper-warm);
+    border: 1px solid var(--line); border-radius: 3px; font-family: var(--font-body);
+    font-size: 17px; color: var(--ink); transition: border-color 0.15s ease, background 0.15s ease;
   }
   .form-input:focus, .form-select:focus, .form-textarea:focus {
     outline: none; border-color: var(--ink); background: #fff;
   }
-  .form-textarea { resize: vertical; min-height: 60px; font-family: var(--font-body); }
+  .form-textarea { resize: vertical; min-height: 70px; font-family: var(--font-body); }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ===== Buttons ===== */
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 13px 20px; border: none; border-radius: 2px; font-family: var(--font-body);
-    font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s ease;
+    padding: 16px 22px; border: none; border-radius: 3px; font-family: var(--font-body);
+    font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.15s ease;
     letter-spacing: 0.01em; text-decoration: none;
   }
   .btn-primary { background: var(--ink); color: var(--paper); width: 100%; }
@@ -134,15 +141,17 @@
   .btn-accent:active { transform: scale(0.98); background: var(--accent-dark); }
   .btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line-strong); }
   .btn-ghost:active { background: var(--paper-warm); }
-  .btn-sm { padding: 8px 14px; font-size: 13px; }
+  .btn-sm { padding: 11px 18px; font-size: 14px; }
   .btn-danger {
     color: var(--accent-dark); background: transparent;
     border: 1px solid rgba(200, 75, 49, 0.3);
   }
   .btn-danger:active { background: var(--error-bg); }
+
+  /* ===== Ticket card ===== */
   .ticket-card {
     background: #fff; border: 1px solid var(--line); border-radius: 3px;
-    padding: 24px 20px; margin-top: 20px; position: relative;
+    padding: 26px 22px; margin-top: 22px; position: relative;
     box-shadow: 0 1px 0 rgba(0,0,0,0.02), 0 8px 24px -12px rgba(0,0,0,0.1);
   }
   .ticket-card::before, .ticket-card::after {
@@ -153,34 +162,36 @@
   .ticket-card::after { right: -7px; }
   .ticket-header {
     text-align: center; border-bottom: 1px dashed var(--line-strong);
-    padding-bottom: 16px; margin-bottom: 16px;
+    padding-bottom: 18px; margin-bottom: 18px;
   }
-  .ticket-event { font-family: var(--font-display); font-size: 22px; line-height: 1.1; margin-bottom: 4px; }
+  .ticket-event { font-family: var(--font-display); font-size: 22px; font-weight: 700; line-height: 1.15; margin-bottom: 6px; letter-spacing: -0.01em; }
   .ticket-meta {
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em;
     text-transform: uppercase; color: var(--muted);
   }
   .qr-container { display: flex; justify-content: center; padding: 8px; background: #fff; }
-  .qr-container img, .qr-container canvas { display: block; width: 220px !important; height: 220px !important; }
+  .qr-container img, .qr-container canvas { display: block; width: 240px !important; height: 240px !important; }
   .ticket-info {
-    margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--line-strong);
+    margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--line-strong);
     display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
   }
   .info-label {
-    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--muted); margin-bottom: 3px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 4px; font-weight: 500;
   }
-  .info-value { font-size: 14px; font-weight: 500; }
+  .info-value { font-size: 16px; font-weight: 500; }
   .info-value.big {
-    font-family: var(--font-display); font-size: 28px; font-weight: 400;
+    font-family: var(--font-display); font-size: 28px; font-weight: 700;
     color: var(--accent); line-height: 1;
   }
   .ticket-id {
-    margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--line-strong);
-    text-align: center; font-family: var(--font-mono); font-size: 10px;
-    letter-spacing: 0.15em; color: var(--muted); word-break: break-all;
+    margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--line-strong);
+    text-align: center; font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.16em; color: var(--muted); word-break: break-all;
   }
-  .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+
+  /* ===== Scanner ===== */
   .scanner-wrap {
     position: relative; background: var(--ink); border-radius: 3px;
     overflow: hidden; aspect-ratio: 1; margin-bottom: 16px;
@@ -206,142 +217,310 @@
   .scanner-placeholder {
     aspect-ratio: 1; background: var(--paper-warm); border: 1px dashed var(--line-strong);
     border-radius: 3px; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 12px; margin-bottom: 16px; padding: 20px; text-align: center;
+    justify-content: center; gap: 14px; margin-bottom: 16px; padding: 20px; text-align: center;
   }
-  .scanner-icon { width: 56px; height: 56px; stroke: var(--muted); stroke-width: 1.5; fill: none; }
-  .scanner-placeholder p { color: var(--muted); font-size: 13px; max-width: 240px; }
+  .scanner-icon { width: 64px; height: 64px; stroke: var(--muted); stroke-width: 1.5; fill: none; }
+  .scanner-placeholder p { color: var(--muted); font-size: 15px; max-width: 260px; line-height: 1.5; }
+
+  /* ===== Mode toggle ===== */
   .mode-toggle {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 16px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 14px;
     background: var(--paper-warm); border: 1px solid var(--line);
-    border-radius: 2px; padding: 3px;
+    border-radius: 3px; padding: 3px;
   }
   .mode-btn {
-    padding: 10px 8px; background: transparent; border: none; border-radius: 2px;
-    font-family: var(--font-body); font-size: 13px; font-weight: 500;
+    padding: 14px 10px; background: transparent; border: none; border-radius: 3px;
+    font-family: var(--font-body); font-size: 15px; font-weight: 500;
     color: var(--muted); cursor: pointer; transition: all 0.2s ease;
   }
   .mode-btn.active { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
   .mode-btn small {
-    display: block; font-size: 10px; font-family: var(--font-mono);
-    letter-spacing: 0.08em; opacity: 0.6; margin-top: 2px; text-transform: uppercase;
+    display: block; font-size: 11px; font-family: var(--font-mono);
+    letter-spacing: 0.08em; opacity: 0.65; margin-top: 3px; text-transform: uppercase; font-weight: 400;
   }
+
+  /* ===== Mode hint ===== */
+  .mode-hint {
+    padding: 12px 16px; margin-bottom: 16px;
+    background: rgba(200, 75, 49, 0.06); border-left: 3px solid var(--accent);
+    font-size: 14px; color: var(--accent-dark); line-height: 1.5;
+  }
+  .mode-hint.sage { background: rgba(107, 127, 90, 0.08); border-left-color: var(--sage); color: var(--sage-dark); }
+
+  /* =====================================================
+     SCAN RESULT — the hero moment
+     ===================================================== */
   .scan-result {
-    margin-top: 16px; padding: 20px; border-radius: 3px;
+    margin-top: 18px; padding: 24px 22px; border-radius: 4px;
     border: 1px solid; animation: slideUp 0.3s ease;
   }
   @keyframes slideUp {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  .scan-result.success { background: var(--success-bg); border-color: rgba(61, 74, 50, 0.25); color: var(--success-ink); }
-  .scan-result.warn { background: var(--warn-bg); border-color: rgba(122, 90, 26, 0.25); color: var(--warn-ink); }
-  .scan-result.error { background: var(--error-bg); border-color: rgba(139, 47, 30, 0.25); color: var(--error-ink); }
-  .result-icon {
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.15em;
-    text-transform: uppercase; opacity: 0.7; margin-bottom: 6px;
+  @keyframes checkmarkPop {
+    0% { opacity: 0; transform: scale(0.5); }
+    70% { transform: scale(1.15); }
+    100% { opacity: 1; transform: scale(1); }
   }
-  .result-title { font-family: var(--font-display); font-size: 24px; margin-bottom: 4px; line-height: 1.1; }
-  .result-detail { font-size: 14px; margin-bottom: 12px; opacity: 0.85; }
+  .scan-result.success { background: var(--success-bg); border-color: rgba(61, 74, 50, 0.3); color: var(--success-ink); }
+  .scan-result.warn { background: var(--warn-bg); border-color: rgba(122, 90, 26, 0.3); color: var(--warn-ink); }
+  .scan-result.error { background: var(--error-bg); border-color: rgba(139, 47, 30, 0.3); color: var(--error-ink); }
+
+  /* Hero success layout */
+  .result-hero {
+    text-align: center;
+    padding: 8px 0 4px;
+  }
+  .result-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 12px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 6px 14px; border-radius: 100px;
+    background: rgba(255,255,255,0.5);
+    margin-bottom: 18px; font-weight: 500;
+  }
+  .result-badge-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: currentColor;
+    animation: checkmarkPop 0.5s ease-out;
+  }
+  .result-badge-icon svg { width: 12px; height: 12px; }
+
+  .result-guest-label {
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    opacity: 0.6; margin-bottom: 6px; font-weight: 500;
+  }
+  .result-guest-name {
+    font-family: var(--font-display); font-size: 36px; font-weight: 700;
+    line-height: 1.05; margin-bottom: 18px;
+    letter-spacing: -0.02em;
+    word-break: break-word;
+  }
+
+  .result-admits-block {
+    display: flex; align-items: baseline; justify-content: center; gap: 12px;
+    margin: 22px 0;
+    padding: 18px 0;
+    border-top: 1px dashed currentColor;
+    border-bottom: 1px dashed currentColor;
+    opacity: 1;
+  }
+  .result-admits-block.use-solid-border {
+    border-color: rgba(0,0,0,0.15);
+  }
+  .result-admits-num {
+    font-family: var(--font-display); font-size: 72px;
+    line-height: 0.9; font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+  .result-admits-label {
+    font-family: var(--font-mono); font-size: 13px;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    opacity: 0.75;
+  }
+  .result-admits-label strong {
+    font-weight: 500;
+    display: block;
+    font-size: 18px;
+    letter-spacing: 0;
+    text-transform: none;
+    font-family: var(--font-body);
+    margin-top: 2px;
+  }
+
   .result-event {
-    font-size: 12px; font-family: var(--font-mono); letter-spacing: 0.08em;
-    opacity: 0.6; margin-bottom: 10px; text-transform: uppercase;
+    display: flex; flex-direction: column; gap: 3px;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.45);
+    border-radius: 3px;
+    margin-bottom: 14px;
+    text-align: left;
   }
+  .result-event-label {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    opacity: 0.6; font-weight: 500;
+  }
+  .result-event-name {
+    font-family: var(--font-display); font-size: 19px;
+    font-weight: 700; line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  .result-event-meta {
+    font-family: var(--font-mono); font-size: 12px;
+    letter-spacing: 0.05em; opacity: 0.75;
+    margin-top: 2px;
+  }
+
+  .result-note {
+    padding: 10px 14px; background: rgba(255,255,255,0.4);
+    border-radius: 3px; margin-bottom: 14px;
+    font-size: 14px; font-style: italic; line-height: 1.5;
+    text-align: left;
+  }
+  .result-note-label {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    font-style: normal; opacity: 0.6; margin-bottom: 2px; font-weight: 500;
+  }
+
   .result-stats {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
-    margin: 14px 0; padding: 12px; background: rgba(255,255,255,0.4); border-radius: 2px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+    margin: 14px 0 16px;
+    background: rgba(0,0,0,0.08);
+    border-radius: 3px;
+    overflow: hidden;
   }
-  .stat-item { text-align: center; }
-  .stat-num { font-family: var(--font-display); font-size: 24px; line-height: 1; margin-bottom: 2px; }
-  .stat-lbl { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7; }
-  .checkin-controls { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
-  .checkin-controls label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; white-space: nowrap; }
-  .checkin-controls .form-input {
-    flex: 1; padding: 10px 12px; font-size: 14px;
-    background: rgba(255,255,255,0.6); min-width: 60px;
+  .stat-item {
+    text-align: center;
+    padding: 14px 6px;
+    background: rgba(255,255,255,0.5);
   }
-  .list-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
-  .list-title { font-family: var(--font-display); font-size: 22px; }
-  .list-count { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 0.1em; }
+  .stat-num {
+    font-family: var(--font-display); font-size: 30px;
+    font-weight: 700; line-height: 1; margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+  .stat-lbl {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    opacity: 0.7; font-weight: 500;
+  }
+
+  .checkin-controls {
+    display: flex; gap: 10px; margin-top: 16px; align-items: stretch;
+  }
+  .checkin-qty-wrap {
+    flex: 1; display: flex; align-items: center;
+    background: #fff; border: 1px solid rgba(0,0,0,0.15); border-radius: 3px;
+    padding: 0 4px;
+  }
+  .checkin-qty-wrap label {
+    padding: 0 12px; font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); white-space: nowrap;
+  }
+  .checkin-qty-wrap input {
+    flex: 1; border: none; background: transparent;
+    padding: 12px 8px; font-family: var(--font-display);
+    font-size: 22px; font-weight: 700; text-align: center; min-width: 50px;
+    -moz-appearance: textfield;
+  }
+  .checkin-qty-wrap input::-webkit-outer-spin-button,
+  .checkin-qty-wrap input::-webkit-inner-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
+  .checkin-qty-wrap input:focus { outline: none; }
+
+  .result-log {
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+  }
+  .result-log-label {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    opacity: 0.55; margin-bottom: 6px; font-weight: 500;
+  }
+  .log-item {
+    display: flex; justify-content: space-between;
+    padding: 5px 0; font-size: 13px; opacity: 0.8;
+  }
+  .log-item .log-time { font-family: var(--font-mono); font-size: 12px; }
+
+  /* ===== Tickets list ===== */
+  .list-header {
+    display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px;
+  }
+  .list-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  .list-count { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: 0.1em; }
   .ticket-item {
     background: #fff; border: 1px solid var(--line); border-radius: 3px;
-    padding: 14px 16px; margin-bottom: 10px; display: grid;
+    padding: 16px 18px; margin-bottom: 10px; display: grid;
     grid-template-columns: 1fr auto; gap: 10px; align-items: center; cursor: pointer;
   }
   .ticket-item:active { background: var(--paper-warm); }
   .ticket-item-main { min-width: 0; }
   .ticket-item-name {
-    font-weight: 500; font-size: 15px; margin-bottom: 2px;
+    font-weight: 500; font-size: 17px; margin-bottom: 3px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .ticket-item-id { font-family: var(--font-mono); font-size: 10px; color: var(--muted); letter-spacing: 0.05em; }
-  .ticket-item-progress { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; color: var(--muted); }
-  .progress-bar { flex: 1; height: 3px; background: var(--paper-warm); border-radius: 2px; overflow: hidden; }
+  .ticket-item-id { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 0.05em; }
+  .ticket-item-progress { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+  .progress-bar { flex: 1; height: 4px; background: var(--paper-warm); border-radius: 2px; overflow: hidden; }
   .progress-fill { height: 100%; background: var(--sage); transition: width 0.3s ease; }
   .progress-fill.full { background: var(--accent); }
   .ticket-item-status {
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
-    text-transform: uppercase; padding: 4px 8px; border-radius: 2px; white-space: nowrap;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 5px 10px; border-radius: 3px; white-space: nowrap; font-weight: 500;
   }
   .status-pending { background: var(--paper-warm); color: var(--muted); }
   .status-partial { background: var(--warn-bg); color: var(--warn-ink); }
   .status-complete { background: var(--success-bg); color: var(--success-ink); }
-  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
-  .empty-state p { font-family: var(--font-display); font-size: 20px; font-style: italic; margin-bottom: 4px; }
-  .empty-state small { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; }
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
-  .stat-card { background: #fff; border: 1px solid var(--line); border-radius: 3px; padding: 16px; }
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--muted); }
+  .empty-state p { font-family: var(--font-display); font-size: 22px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.01em; }
+  .empty-state small { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em; }
+
+  /* ===== Stats ===== */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 26px; }
+  .stat-card { background: #fff; border: 1px solid var(--line); border-radius: 3px; padding: 18px; }
   .stat-card-label {
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 8px; font-weight: 500;
   }
-  .stat-card-num { font-family: var(--font-display); font-size: 36px; line-height: 1; }
-  .stat-card-sub { font-size: 12px; color: var(--muted); margin-top: 4px; font-family: var(--font-mono); }
+  .stat-card-num { font-family: var(--font-display); font-size: 36px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+  .stat-card-sub { font-size: 13px; color: var(--muted); margin-top: 6px; font-family: var(--font-mono); }
   .stat-card.accent .stat-card-num { color: var(--accent); }
   .stat-card.sage .stat-card-num { color: var(--sage-dark); }
+
+  /* ===== Filters ===== */
   .filter-row {
-    display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto;
+    display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto;
     -webkit-overflow-scrolling: touch; padding-bottom: 2px;
   }
   .filter-chip {
-    padding: 6px 12px; background: transparent; border: 1px solid var(--line);
-    border-radius: 100px; font-family: var(--font-mono); font-size: 11px;
+    padding: 8px 16px; background: transparent; border: 1px solid var(--line);
+    border-radius: 100px; font-family: var(--font-mono); font-size: 12px;
     letter-spacing: 0.05em; color: var(--muted); cursor: pointer;
-    white-space: nowrap; transition: all 0.15s ease;
+    white-space: nowrap; transition: all 0.15s ease; font-weight: 500;
   }
   .filter-chip.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  /* ===== Toast ===== */
   .toast {
-    position: fixed; bottom: 20px; left: 50%;
-    transform: translateX(-50%) translateY(120px);
-    background: var(--ink); color: var(--paper); padding: 12px 20px;
-    border-radius: 100px; font-size: 13px; font-weight: 500; z-index: 1000;
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(140px);
+    background: var(--ink); color: var(--paper); padding: 14px 22px;
+    border-radius: 100px; font-size: 15px; font-weight: 500; z-index: 1000;
     transition: transform 0.3s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     max-width: 80%; text-align: center;
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
-  .divider { display: flex; align-items: center; gap: 10px; margin: 20px 0; }
+
+  .divider { display: flex; align-items: center; gap: 12px; margin: 22px 0; }
   .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
   .divider-text {
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.15em;
-    text-transform: uppercase; color: var(--muted);
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--muted); font-weight: 500;
   }
+
+  /* ===== Settings ===== */
   .settings-section {
     background: #fff; border: 1px solid var(--line); border-radius: 3px;
-    padding: 18px; margin-bottom: 14px;
+    padding: 20px; margin-bottom: 14px;
   }
-  .settings-title { font-family: var(--font-display); font-size: 20px; margin-bottom: 4px; }
-  .settings-desc { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+  .settings-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; margin-bottom: 5px; letter-spacing: -0.01em; }
+  .settings-desc { font-size: 14px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
   .event-title-big {
-    font-family: var(--font-display); font-size: 26px; font-weight: 400;
-    line-height: 1.1; padding: 12px 0; border: none; background: transparent; width: 100%;
+    font-family: var(--font-display); font-size: 26px; font-weight: 700;
+    line-height: 1.15; padding: 14px 0; border: none; background: transparent; width: 100%;
+    letter-spacing: -0.01em;
   }
   .event-title-big:focus { outline: none; }
-  .event-title-big::placeholder { color: var(--muted); font-style: italic; }
-  .mode-hint {
-    padding: 10px 14px; margin-bottom: 14px;
-    background: rgba(200, 75, 49, 0.06); border-left: 2px solid var(--accent);
-    font-size: 12px; color: var(--accent-dark); line-height: 1.5;
-  }
-  .mode-hint.sage { background: rgba(107, 127, 90, 0.08); border-left-color: var(--sage); color: var(--sage-dark); }
+  .event-title-big::placeholder { color: var(--muted); font-weight: 400; }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -352,68 +531,56 @@
     <span>№ 001</span>
     <span id="today-date">——</span>
   </div>
-  <h1>活动<em>票务</em></h1>
-  <div class="masthead-sub">Ticketing & Check-in · Local</div>
+  <h1>Event <em>Passes</em></h1>
+  <div class="masthead-sub">Ticketing & Check-in</div>
 </header>
 
 <nav class="tabs" role="tablist">
-  <button class="tab active" data-panel="generate" role="tab">
-    <span class="tab-label-cn">出票</span>
-    <span class="tab-label-en">Issue</span>
-  </button>
-  <button class="tab" data-panel="scan" role="tab">
-    <span class="tab-label-cn">检票</span>
-    <span class="tab-label-en">Scan</span>
-  </button>
-  <button class="tab" data-panel="tickets" role="tab">
-    <span class="tab-label-cn">票单</span>
-    <span class="tab-label-en">List</span>
-  </button>
-  <button class="tab" data-panel="settings" role="tab">
-    <span class="tab-label-cn">设置</span>
-    <span class="tab-label-en">Config</span>
-  </button>
+  <button class="tab active" data-panel="generate" role="tab">Issue</button>
+  <button class="tab" data-panel="scan" role="tab">Scan</button>
+  <button class="tab" data-panel="tickets" role="tab">List</button>
+  <button class="tab" data-panel="settings" role="tab">Setup</button>
 </nav>
 
 <!-- ============ Panel: Generate ============ -->
 <section class="panel active" id="panel-generate" role="tabpanel">
   <div class="form-group">
-    <label class="form-label">家长姓名 · Parent Name</label>
-    <input type="text" class="form-input" id="parent-name" placeholder="张妈妈 / Ms. Zhang" autocomplete="off">
+    <label class="form-label">Guest Name</label>
+    <input type="text" class="form-input" id="parent-name" placeholder="e.g. Ms. Zhang" autocomplete="off">
   </div>
   <div class="form-row">
     <div class="form-group">
-      <label class="form-label">票数 · Quantity</label>
+      <label class="form-label">Quantity</label>
       <input type="number" class="form-input" id="ticket-count" value="1" min="1" max="20">
     </div>
     <div class="form-group">
-      <label class="form-label">联系方式 · Contact</label>
-      <input type="text" class="form-input" id="parent-contact" placeholder="选填 Optional" autocomplete="off">
+      <label class="form-label">Contact</label>
+      <input type="text" class="form-input" id="parent-contact" placeholder="Optional" autocomplete="off">
     </div>
   </div>
   <div class="form-group">
-    <label class="form-label">备注 · Note</label>
-    <textarea class="form-textarea" id="ticket-note" placeholder="例如：包含 2 名儿童 / Contains 2 children" rows="2"></textarea>
+    <label class="form-label">Note</label>
+    <textarea class="form-textarea" id="ticket-note" placeholder="e.g. 2 kids, 1 adult" rows="2"></textarea>
   </div>
-  <button class="btn btn-accent" id="btn-generate">生成二维码 · Generate QR</button>
+  <button class="btn btn-accent" id="btn-generate">Generate QR Code</button>
   <div id="qr-output"></div>
 </section>
 
 <!-- ============ Panel: Scan ============ -->
 <section class="panel" id="panel-scan" role="tabpanel">
-  <div class="mode-toggle" role="group" aria-label="检票模式">
+  <div class="mode-toggle" role="group" aria-label="Check-in mode">
     <button class="mode-btn active" data-mode="quick">
-      快速模式
-      <small>Quick · Admit all</small>
+      Quick
+      <small>Admit all</small>
     </button>
     <button class="mode-btn" data-mode="partial">
-      分次模式
-      <small>Partial</small>
+      Partial
+      <small>Choose count</small>
     </button>
   </div>
 
   <div id="mode-hint" class="mode-hint sage">
-    <strong>快速模式</strong>：扫描即全家入场，适合一次性到齐的家庭。
+    <strong>Quick mode</strong> — one scan admits the entire group.
   </div>
 
   <div id="scanner-placeholder" class="scanner-placeholder">
@@ -423,7 +590,7 @@
       <rect x="3" y="14" width="7" height="7" rx="1"/>
       <path d="M14 14h3v3h-3zM18 18h3v3h-3zM14 18h1M18 14h1"/>
     </svg>
-    <p>点击下方开始扫描家长提供的二维码<br><small style="opacity:.7;">Tap below to start scanning</small></p>
+    <p>Tap below to start the camera and scan a QR code.</p>
   </div>
 
   <div class="scanner-wrap hidden" id="scanner-wrap">
@@ -434,16 +601,14 @@
     </div>
   </div>
 
-  <button class="btn btn-primary" id="btn-scan-toggle">开始扫描 · Start Scanning</button>
+  <button class="btn btn-primary" id="btn-scan-toggle">Start Scanning</button>
 
-  <button class="btn btn-ghost btn-sm" id="btn-snap-once" style="margin-top:10px; display:none;">拍一张 · Snap & Decode</button>
+  <div class="divider"><span class="divider-text">or</span></div>
 
-  <div class="divider"><span class="divider-text">或 / Or</span></div>
-
-  <button class="btn btn-ghost" id="btn-pick-image" style="margin-bottom:10px;">从相册选择图片 · Pick from Album</button>
+  <button class="btn btn-ghost" id="btn-pick-image" style="margin-bottom:10px;">Pick Image from Album</button>
   <input type="file" id="pick-image-input" accept="image/*" style="display:none;">
 
-  <button class="btn btn-ghost" id="btn-manual-lookup">手动输入编号 · Manual Lookup</button>
+  <button class="btn btn-ghost" id="btn-manual-lookup">Manual Lookup by ID</button>
 
   <div id="scan-result"></div>
 </section>
@@ -452,27 +617,27 @@
 <section class="panel" id="panel-tickets" role="tabpanel">
   <div class="stats-grid">
     <div class="stat-card sage">
-      <div class="stat-card-label">已发出 / Issued</div>
+      <div class="stat-card-label">Issued</div>
       <div class="stat-card-num" id="stat-issued">0</div>
-      <div class="stat-card-sub">组 groups</div>
+      <div class="stat-card-sub">groups</div>
     </div>
     <div class="stat-card accent">
-      <div class="stat-card-label">已入场 / Checked in</div>
+      <div class="stat-card-label">Checked in</div>
       <div class="stat-card-num" id="stat-checked">0</div>
-      <div class="stat-card-sub">/ <span id="stat-total">0</span> 人 people</div>
+      <div class="stat-card-sub">of <span id="stat-total">0</span> people</div>
     </div>
   </div>
 
   <div class="list-header">
-    <span class="list-title">票据记录</span>
+    <span class="list-title">Tickets</span>
     <span class="list-count" id="list-count">—— 0 records</span>
   </div>
 
   <div class="filter-row">
-    <button class="filter-chip active" data-filter="all">全部 All</button>
-    <button class="filter-chip" data-filter="pending">未入场 Pending</button>
-    <button class="filter-chip" data-filter="partial">部分 Partial</button>
-    <button class="filter-chip" data-filter="complete">完成 Complete</button>
+    <button class="filter-chip active" data-filter="all">All</button>
+    <button class="filter-chip" data-filter="pending">Pending</button>
+    <button class="filter-chip" data-filter="partial">Partial</button>
+    <button class="filter-chip" data-filter="complete">Complete</button>
   </div>
 
   <div id="tickets-list"></div>
@@ -481,39 +646,46 @@
 <!-- ============ Panel: Settings ============ -->
 <section class="panel" id="panel-settings" role="tabpanel">
   <div class="settings-section">
-    <div class="settings-title">活动信息</div>
-    <div class="settings-desc">Event details — embedded into every QR code</div>
-    <input type="text" class="event-title-big" id="event-name" placeholder="输入活动名称..." autocomplete="off">
-    <div class="form-row" style="margin-top:10px;">
+    <div class="settings-title">Event Details</div>
+    <div class="settings-desc">This information will be embedded in every QR code and shown when scanning.</div>
+    <input type="text" class="event-title-big" id="event-name" placeholder="Enter event name..." autocomplete="off">
+    <div class="form-row" style="margin-top:12px;">
       <div class="form-group" style="margin:0;">
-        <label class="form-label">日期 Date</label>
+        <label class="form-label">Date</label>
         <input type="date" class="form-input" id="event-date">
       </div>
       <div class="form-group" style="margin:0;">
-        <label class="form-label">地点 Venue</label>
-        <input type="text" class="form-input" id="event-venue" placeholder="选填">
+        <label class="form-label">Venue</label>
+        <input type="text" class="form-input" id="event-venue" placeholder="Optional">
       </div>
     </div>
-    <button class="btn btn-primary btn-sm" id="btn-save-event" style="margin-top:14px; width:auto;">保存 Save</button>
+    <div class="form-row" style="margin-top:12px;">
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">Session / Time</label>
+        <input type="text" class="form-input" id="event-session" placeholder="e.g. 7:30 PM / Matinee">
+      </div>
+      <div class="form-group" style="margin:0;"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" id="btn-save-event" style="margin-top:16px; width:auto;">Save</button>
   </div>
 
   <div class="settings-section">
-    <div class="settings-title">数据备份</div>
-    <div class="settings-desc">Export or import your ticket database as JSON.</div>
+    <div class="settings-title">Data Backup</div>
+    <div class="settings-desc">Export or import your ticket database as a JSON file.</div>
     <div class="action-row">
-      <button class="btn btn-ghost btn-sm" id="btn-export">导出 Export</button>
-      <button class="btn btn-ghost btn-sm" id="btn-import">导入 Import</button>
+      <button class="btn btn-ghost btn-sm" id="btn-export">Export</button>
+      <button class="btn btn-ghost btn-sm" id="btn-import">Import</button>
     </div>
     <input type="file" id="import-file" accept=".json" style="display:none;">
   </div>
 
   <div class="settings-section">
-    <div class="settings-title">危险操作</div>
-    <div class="settings-desc">Clear all ticket records. Cannot be undone.</div>
-    <button class="btn btn-danger btn-sm" id="btn-clear-all" style="width:100%;">清空所有数据 Clear All Data</button>
+    <div class="settings-title">Danger Zone</div>
+    <div class="settings-desc">Permanently erase all ticket records. This cannot be undone.</div>
+    <button class="btn btn-danger btn-sm" id="btn-clear-all" style="width:100%;">Clear All Data</button>
   </div>
 
-  <div style="text-align:center; padding:20px 0; color:var(--muted); font-family:var(--font-mono); font-size:10px; letter-spacing:0.15em;">
+  <div style="text-align:center; padding:24px 0; color:var(--muted); font-family:var(--font-mono); font-size:11px; letter-spacing:0.16em;">
     RUNS 100% LOCALLY · NO SERVER
   </div>
 </section>
@@ -533,6 +705,8 @@ let scanning = false;
 let videoStream = null;
 let rafId = null;
 let lastScanTime = 0;
+let scanAttempts = 0;
+let scanStartTime = 0;
 
 function shortId() {
   const t = Date.now().toString(36).toUpperCase().slice(-5);
@@ -547,8 +721,8 @@ function loadTickets() {
 function saveTickets() { localStorage.setItem(STORE_KEY, JSON.stringify(tickets)); }
 
 function loadEvent() {
-  try { const raw = localStorage.getItem(EVENT_KEY); return raw ? JSON.parse(raw) : { name:'', date:'', venue:'' }; }
-  catch(e) { return { name:'', date:'', venue:'' }; }
+  try { const raw = localStorage.getItem(EVENT_KEY); return raw ? JSON.parse(raw) : { name:'', date:'', venue:'', session:'' }; }
+  catch(e) { return { name:'', date:'', venue:'', session:'' }; }
 }
 function saveEvent() { localStorage.setItem(EVENT_KEY, JSON.stringify(eventInfo)); }
 
@@ -567,21 +741,17 @@ function escapeHtml(s) {
 
 function formatDate(d) {
   if (!d) return '';
-  try { return new Date(d).toLocaleDateString('zh-CN', { month:'short', day:'numeric', year:'numeric' }); }
-  catch(e) { return d; }
+  try {
+    return new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  } catch(e) { return d; }
 }
 
-// Base URL used in QR codes. Points to the deployed site
-// so that admin can scan with any native camera app.
 const QR_BASE_URL = 'https://seanqiubrave.github.io/liberalticket/';
 
-// Encode object -> URL-safe base64
 function encodePayload(obj) {
   const json = JSON.stringify(obj);
-  // UTF-8 safe base64 (handle Chinese characters)
   const utf8 = unescape(encodeURIComponent(json));
   const b64 = btoa(utf8);
-  // URL-safe: replace + / = with - _ (omit =)
   return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
@@ -595,16 +765,11 @@ function decodePayload(str) {
   } catch(e) { return null; }
 }
 
-// Build QR payload — now URL format, scannable by any camera
 function buildQRPayload(ticket) {
   const obj = {
-    v: 1,
-    i: ticket.id,
-    n: ticket.name,
-    q: ticket.count,
-    e: ticket.event || '',
-    d: ticket.eventDate || '',
-    l: ticket.venue || '',
+    v: 1, i: ticket.id, n: ticket.name, q: ticket.count,
+    e: ticket.event || '', d: ticket.eventDate || '',
+    l: ticket.venue || '', s: ticket.session || '',
     c: ticket.createdAt
   };
   if (ticket.note) obj.t = ticket.note;
@@ -616,7 +781,6 @@ function parseQRPayload(raw) {
   if (!raw) return null;
   const s = String(raw).trim();
 
-  // Format 1 (new): URL with ?t= param
   const urlMatch = s.match(/[?&]t=([^&\s]+)/);
   if (urlMatch) {
     const obj = decodePayload(urlMatch[1]);
@@ -624,13 +788,13 @@ function parseQRPayload(raw) {
       return {
         id: obj.i, name: obj.n, count: obj.q,
         event: obj.e || '', eventDate: obj.d || '', venue: obj.l || '',
+        session: obj.s || '',
         note: obj.t || '', contact: obj.x || '',
         createdAt: obj.c || Date.now(), fromQR: true
       };
     }
   }
 
-  // Format 2 (legacy): TKT:{...}
   if (s.startsWith('TKT:')) {
     try {
       const obj = JSON.parse(s.slice(4));
@@ -638,6 +802,7 @@ function parseQRPayload(raw) {
         return {
           id: obj.i, name: obj.n, count: obj.q,
           event: obj.e || '', eventDate: obj.d || '', venue: obj.l || '',
+          session: obj.s || '',
           note: obj.t || '', contact: obj.x || '',
           createdAt: obj.c || Date.now(), fromQR: true
         };
@@ -645,7 +810,6 @@ function parseQRPayload(raw) {
     } catch(e) {}
   }
 
-  // Format 3 (legacy): plain ticket ID
   if (/^T-[A-Z0-9]+-[A-Z0-9]+$/.test(s)) {
     return { id: s, fromQR: true, legacy: true };
   }
@@ -682,8 +846,8 @@ function generateTicket() {
   const contact = document.getElementById('parent-contact').value.trim();
   const note = document.getElementById('ticket-note').value.trim();
 
-  if (!name) { toast('请输入家长姓名'); document.getElementById('parent-name').focus(); return; }
-  if (!count || count < 1) { toast('票数至少为 1'); return; }
+  if (!name) { toast('Please enter the guest name'); document.getElementById('parent-name').focus(); return; }
+  if (!count || count < 1) { toast('Quantity must be at least 1'); return; }
 
   const ticket = {
     id: shortId(),
@@ -691,6 +855,7 @@ function generateTicket() {
     event: eventInfo.name || '',
     eventDate: eventInfo.date || '',
     venue: eventInfo.venue || '',
+    session: eventInfo.session || '',
     checkedIn: 0,
     createdAt: Date.now(),
     log: []
@@ -702,17 +867,22 @@ function generateTicket() {
   document.getElementById('ticket-count').value = '1';
   document.getElementById('parent-contact').value = '';
   document.getElementById('ticket-note').value = '';
-  toast('✓ 已生成二维码');
+  toast('✓ QR code generated');
 }
 
 function renderQR(ticket) {
   const payload = buildQRPayload(ticket);
   const out = document.getElementById('qr-output');
+  const metaParts = [];
+  if (ticket.eventDate) metaParts.push(formatDate(ticket.eventDate));
+  if (ticket.session) metaParts.push(ticket.session);
+  if (ticket.venue) metaParts.push(ticket.venue);
+
   out.innerHTML = `
     <div class="ticket-card">
       <div class="ticket-header">
-        <div class="ticket-event">${escapeHtml(ticket.event) || '活动通票 · Event Pass'}</div>
-        <div class="ticket-meta">${escapeHtml(formatDate(ticket.eventDate)) || 'ADMIT ALL'} ${ticket.venue ? '· ' + escapeHtml(ticket.venue) : ''}</div>
+        <div class="ticket-event">${escapeHtml(ticket.event) || 'Event Pass'}</div>
+        <div class="ticket-meta">${metaParts.length ? escapeHtml(metaParts.join(' · ')) : 'ADMIT ALL'}</div>
       </div>
       <div class="qr-container" id="qr-target"></div>
       <div class="ticket-info">
@@ -725,18 +895,18 @@ function renderQR(ticket) {
           <div class="info-value big">${ticket.count}</div>
         </div>
       </div>
-      ${ticket.note ? `<div style="margin-top:10px; font-size:12px; color:var(--muted); font-style:italic;">${escapeHtml(ticket.note)}</div>` : ''}
+      ${ticket.note ? `<div style="margin-top:12px; font-size:13px; color:var(--muted); font-style:italic;">${escapeHtml(ticket.note)}</div>` : ''}
       <div class="ticket-id">${ticket.id}</div>
     </div>
     <div class="action-row">
-      <button class="btn btn-ghost btn-sm" id="btn-download-qr">下载图片 Download</button>
-      <button class="btn btn-ghost btn-sm" id="btn-share-qr">分享 Share</button>
+      <button class="btn btn-ghost btn-sm" id="btn-download-qr">Download</button>
+      <button class="btn btn-ghost btn-sm" id="btn-share-qr">Share</button>
     </div>
   `;
 
   new QRCode(document.getElementById('qr-target'), {
     text: payload,
-    width: 220, height: 220,
+    width: 240, height: 240,
     colorDark: '#1a1a1a', colorLight: '#ffffff',
     correctLevel: QRCode.CorrectLevel.M
   });
@@ -756,7 +926,7 @@ async function downloadTicket(ticket) {
     a.download = `ticket-${ticket.name}-${ticket.id}.png`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    toast('✓ 图片已下载');
+    toast('✓ Image downloaded');
   }, 'image/png');
 }
 
@@ -768,13 +938,13 @@ async function shareTicket(ticket) {
       try {
         await navigator.share({
           files: [file],
-          title: `${ticket.event || '活动票'} · ${ticket.name}`,
-          text: `${ticket.name} - ${ticket.count} 张票`
+          title: `${ticket.event || 'Event Pass'} · ${ticket.name}`,
+          text: `${ticket.name} · ${ticket.count} ticket${ticket.count > 1 ? 's' : ''}`
         });
-      } catch(e) { if (e.name !== 'AbortError') toast('分享取消'); }
+      } catch(e) { if (e.name !== 'AbortError') toast('Share cancelled'); }
     } else {
       downloadTicket(ticket);
-      toast('此设备不支持直接分享，已下载图片');
+      toast('Device does not support sharing, image downloaded instead');
     }
   }, 'image/png');
 }
@@ -797,14 +967,15 @@ function renderTicketCanvas(ticket) {
 
     ctx.fillStyle = '#1a1a1a';
     ctx.textAlign = 'center';
-    ctx.font = '400 42px Georgia, serif';
-    const title = ticket.event || '活动通票 · Event Pass';
+    ctx.font = 'bold 38px Arial, Helvetica, sans-serif';
+    const title = ticket.event || 'Event Pass';
     ctx.fillText(title, W/2, 130);
 
-    ctx.font = '500 14px "SF Mono", monospace';
+    ctx.font = 'bold 13px "Courier New", monospace';
     ctx.fillStyle = '#8a8578';
     const subParts = [];
     if (ticket.eventDate) subParts.push(formatDate(ticket.eventDate).toUpperCase());
+    if (ticket.session) subParts.push(ticket.session.toUpperCase());
     if (ticket.venue) subParts.push(ticket.venue.toUpperCase());
     if (!subParts.length) subParts.push('ADMIT ALL');
     ctx.fillText(subParts.join('  ·  '), W/2, 160);
@@ -829,38 +1000,31 @@ function renderTicketCanvas(ticket) {
     setTimeout(() => {
       const qrCanvas = temp.querySelector('canvas');
       const qrImg = temp.querySelector('img');
-      if (qrCanvas) { ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize); finishDraw(); }
-      else if (qrImg) {
-        const img = new Image();
-        img.onload = () => { ctx.drawImage(img, qrX, qrY, qrSize, qrSize); finishDraw(); };
-        img.src = qrImg.src;
-      } else { finishDraw(); }
-
-      function finishDraw() {
+      const finish = () => {
         document.body.removeChild(temp);
         drawDashed(ctx, pad + 30, qrY + qrSize + 30, W - pad - 30, qrY + qrSize + 30);
 
         ctx.textAlign = 'left';
-        ctx.font = '500 11px "SF Mono", monospace';
+        ctx.font = 'bold 11px "Courier New", monospace';
         ctx.fillStyle = '#8a8578';
         ctx.fillText('GUEST', pad + 40, qrY + qrSize + 70);
 
-        ctx.font = '500 22px Georgia, serif';
+        ctx.font = 'bold 24px Arial, Helvetica, sans-serif';
         ctx.fillStyle = '#1a1a1a';
         ctx.fillText(ticket.name, pad + 40, qrY + qrSize + 100);
 
         ctx.textAlign = 'right';
-        ctx.font = '500 11px "SF Mono", monospace';
+        ctx.font = 'bold 11px "Courier New", monospace';
         ctx.fillStyle = '#8a8578';
         ctx.fillText('ADMITS', W - pad - 40, qrY + qrSize + 70);
 
-        ctx.font = '400 56px Georgia, serif';
+        ctx.font = 'bold 52px Arial, Helvetica, sans-serif';
         ctx.fillStyle = '#c84b31';
         ctx.fillText(String(ticket.count), W - pad - 40, qrY + qrSize + 120);
 
         if (ticket.note) {
           ctx.textAlign = 'center';
-          ctx.font = 'italic 14px Georgia, serif';
+          ctx.font = '14px Arial, Helvetica, sans-serif';
           ctx.fillStyle = '#8a8578';
           wrapText(ctx, ticket.note, W/2, qrY + qrSize + 165, W - pad*2 - 60, 20);
         }
@@ -868,11 +1032,17 @@ function renderTicketCanvas(ticket) {
         drawDashed(ctx, pad + 30, H - pad - 70, W - pad - 30, H - pad - 70);
 
         ctx.textAlign = 'center';
-        ctx.font = '500 12px "SF Mono", monospace';
+        ctx.font = 'bold 12px "Courier New", monospace';
         ctx.fillStyle = '#8a8578';
         ctx.fillText(ticket.id, W/2, H - pad - 40);
         resolve(canvas);
-      }
+      };
+      if (qrCanvas) { ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize); finish(); }
+      else if (qrImg) {
+        const img = new Image();
+        img.onload = () => { ctx.drawImage(img, qrX, qrY, qrSize, qrSize); finish(); };
+        img.src = qrImg.src;
+      } else { finish(); }
     }, 150);
   });
 }
@@ -906,10 +1076,10 @@ function updateModeHint() {
   const hint = document.getElementById('mode-hint');
   if (scanMode === 'quick') {
     hint.className = 'mode-hint sage';
-    hint.innerHTML = '<strong>快速模式</strong>：扫描即全家入场，适合一次性到齐的家庭。';
+    hint.innerHTML = '<strong>Quick mode</strong> — one scan admits the entire group at once.';
   } else {
     hint.className = 'mode-hint';
-    hint.innerHTML = '<strong>分次模式</strong>：扫描后确认人数，适合家人分批到达（4张票先来2个人，下次再来2个）。';
+    hint.innerHTML = '<strong>Partial mode</strong> — confirm how many people are entering. Good for groups arriving separately.';
   }
 }
 
@@ -920,7 +1090,7 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
     scanMode = btn.dataset.mode;
     localStorage.setItem(MODE_KEY, scanMode);
     updateModeHint();
-    toast(scanMode === 'quick' ? '✓ 已切换到快速模式' : '✓ 已切换到分次模式');
+    toast(scanMode === 'quick' ? '✓ Switched to Quick mode' : '✓ Switched to Partial mode');
   });
 });
 
@@ -938,34 +1108,16 @@ scanBtn.addEventListener('click', () => {
 });
 
 async function startScanner() {
-  // Show immediate feedback so user knows button click was received
-  const box = document.getElementById('scan-result');
-  box.innerHTML = `
-    <div class="scan-result" style="background: rgba(107, 127, 90, 0.1); border-color: var(--sage); color: var(--sage-dark);">
-      <div class="result-icon">⟳ STARTING...</div>
-      <div class="result-title" style="font-size:18px;">正在启动摄像头</div>
-      <div class="result-detail" id="diag-text" style="font-size:12px; white-space:pre-wrap;">
-Step 1: 检查浏览器支持...</div>
-    </div>
-  `;
-  const diag = document.getElementById('diag-text');
-  const log = (msg) => { diag.textContent += '\n' + msg; };
-
-  // Pre-flight checks
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    showCameraError('此浏览器不支持摄像头 API',
-      '请确认：\n• 用的是 Safari / Chrome（不是微信/QQ 内置浏览器）\n• 网址是 https:// 开头\n• iOS 系统版本 ≥ 11\n\n当前 User-Agent:\n' + navigator.userAgent);
+    showCameraError('Camera API not available',
+      'Please ensure:\n• You are using Safari or Chrome (not an in-app browser)\n• The URL starts with https://\n• iOS version is 11 or higher');
     return;
   }
-  log('✓ Step 1: 浏览器支持 API');
-
   if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-    showCameraError('需要 HTTPS 才能使用摄像头',
-      `当前地址：${location.protocol}//${location.hostname}\n\n浏览器安全策略只允许 HTTPS 站点访问摄像头。请通过 https:// 开头的链接打开此页面。`);
+    showCameraError('HTTPS required for camera access',
+      `Current: ${location.protocol}//${location.hostname}\n\nBrowser security policy only allows camera access on HTTPS sites.`);
     return;
   }
-  log('✓ Step 2: HTTPS 正常');
-  log('Step 3: 正在请求摄像头权限（应该弹出允许/拒绝对话框）...');
 
   try {
     videoStream = await navigator.mediaDevices.getUserMedia({
@@ -976,8 +1128,6 @@ Step 1: 检查浏览器支持...</div>
       },
       audio: false
     });
-    log('✓ Step 3: 获得摄像头授权');
-    log('Step 4: 正在启动视频流...');
 
     const video = document.getElementById('scanner-video');
     video.srcObject = videoStream;
@@ -985,45 +1135,31 @@ Step 1: 检查浏览器支持...</div>
     video.setAttribute('muted', 'true');
     video.muted = true;
     await video.play();
-    log('✓ Step 4: 视频流启动成功');
 
     scanning = true;
     document.getElementById('scanner-placeholder').classList.add('hidden');
     document.getElementById('scanner-wrap').classList.remove('hidden');
-    document.getElementById('btn-snap-once').style.display = 'inline-flex';
-    scanBtn.textContent = '停止扫描 · Stop';
+    scanBtn.textContent = 'Stop Scanning';
     scanBtn.classList.remove('btn-primary');
     scanBtn.classList.add('btn-ghost');
-    // Keep a small hint visible so user knows scanning is in progress
-    document.getElementById('scan-result').innerHTML = `
-      <div class="scan-result" style="background: rgba(107, 127, 90, 0.1); border-color: var(--sage); color: var(--sage-dark); padding: 12px 16px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="width:10px; height:10px; border-radius:50%; background: var(--sage); animation: pulse 1.2s ease-in-out infinite;"></div>
-          <div style="flex: 1;">
-            <div id="scan-status-text" style="font-size:13px; font-weight:500;">正在扫描中…</div>
-            <div style="font-size:11px; opacity:0.7; margin-top:2px;">对准 QR 码，保持距离 10-20 cm，避开屏幕反光</div>
-          </div>
-        </div>
-      </div>
-      <style>@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }</style>
-    `;
+    document.getElementById('scan-result').innerHTML = '';
     lastScanTime = 0;
     scanAttempts = 0;
     scanStartTime = Date.now();
     scanLoop();
   } catch(err) {
     console.error('Camera error:', err);
-    let title = '无法打开摄像头';
-    let detail = `错误名称：${err.name}\n错误信息：${err.message || '(无)'}\n\nUser-Agent:\n${navigator.userAgent}`;
+    let title = 'Cannot access camera';
+    let detail = `${err.name}: ${err.message || ''}`;
     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-      title = '摄像头权限被拒绝';
-      detail = 'iPhone 解决方法：\n\n1. 打开 iPhone《设置》\n2. 往下找到 Safari → 摄像头\n3. 确保是"询问"或"允许"\n4. 回到这个页面，刷新（左上角 "aA" → 重新载入）\n5. 再点"开始扫描"\n\n如果还是不行：\n• 地址栏左侧的 "aA" 图标 → 网站设置 → 摄像头 → 允许\n• 完全关闭 Safari（上划后台）再打开';
+      title = 'Camera permission denied';
+      detail = 'To fix on iPhone:\n\n1. Open Settings\n2. Scroll to Safari / Chrome\n3. Select Camera → Allow or Ask\n4. Close this app from multitasking\n5. Reopen and try again';
     } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-      title = '未检测到摄像头';
-      detail = '此设备没有可用的摄像头，或被其他应用占用。';
+      title = 'No camera found';
+      detail = 'This device has no available camera, or it is in use by another app.';
     } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-      title = '摄像头被其他应用占用';
-      detail = '请关闭正在使用摄像头的其他应用（如微信、FaceTime）再重试。';
+      title = 'Camera is in use';
+      detail = 'Please close other apps using the camera (FaceTime, Zoom, etc.) and try again.';
     } else if (err.name === 'OverconstrainedError') {
       try {
         videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
@@ -1035,15 +1171,17 @@ Step 1: 检查浏览器支持...</div>
         scanning = true;
         document.getElementById('scanner-placeholder').classList.add('hidden');
         document.getElementById('scanner-wrap').classList.remove('hidden');
-        scanBtn.textContent = '停止扫描 · Stop';
+        scanBtn.textContent = 'Stop Scanning';
         scanBtn.classList.remove('btn-primary');
         scanBtn.classList.add('btn-ghost');
         document.getElementById('scan-result').innerHTML = '';
         lastScanTime = 0;
+        scanAttempts = 0;
+        scanStartTime = Date.now();
         scanLoop();
         return;
       } catch(e2) {
-        title = '摄像头参数不支持';
+        title = 'Camera config not supported';
         detail = e2.name + ': ' + (e2.message || '');
       }
     }
@@ -1055,10 +1193,12 @@ function showCameraError(title, detail) {
   const box = document.getElementById('scan-result');
   box.innerHTML = `
     <div class="scan-result error">
-      <div class="result-icon">✕ CAMERA ERROR</div>
-      <div class="result-title">${escapeHtml(title)}</div>
-      <div class="result-detail" style="white-space:pre-wrap; font-size:13px;">${escapeHtml(detail)}</div>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('btn-scan-toggle').click()" style="margin-top:10px;">再试一次 Retry</button>
+      <div class="result-badge">
+        <span>✕ Camera Error</span>
+      </div>
+      <div class="result-guest-name" style="font-size:28px;">${escapeHtml(title)}</div>
+      <div style="white-space:pre-wrap; font-size:14px; line-height:1.6; text-align:left;">${escapeHtml(detail)}</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('btn-scan-toggle').click()" style="margin-top:16px;">Try Again</button>
     </div>
   `;
 }
@@ -1072,76 +1212,10 @@ function stopScanner() {
   }
   document.getElementById('scanner-placeholder').classList.remove('hidden');
   document.getElementById('scanner-wrap').classList.add('hidden');
-  document.getElementById('btn-snap-once').style.display = 'none';
-  scanBtn.textContent = '开始扫描 · Start Scanning';
+  scanBtn.textContent = 'Start Scanning';
   scanBtn.classList.remove('btn-ghost');
   scanBtn.classList.add('btn-primary');
 }
-
-// Snap once - take a single high-quality frame and decode it with full effort
-document.getElementById('btn-snap-once').addEventListener('click', () => {
-  if (!scanning) return;
-  const video = document.getElementById('scanner-video');
-  const canvas = document.getElementById('scanner-canvas');
-  const vw = video.videoWidth, vh = video.videoHeight;
-  canvas.width = vw; canvas.height = vh;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  ctx.drawImage(video, 0, 0, vw, vh);
-
-  const attempts = [];
-  // 1. Full frame, both inversions
-  let code = jsQR(ctx.getImageData(0,0,vw,vh).data, vw, vh, { inversionAttempts: 'attemptBoth' });
-  attempts.push('full: ' + (code ? 'FOUND' : 'no'));
-
-  // 2. Multiple center crops at different sizes
-  const crops = [0.9, 0.75, 0.6, 0.5];
-  for (const ratio of crops) {
-    if (code) break;
-    const side = Math.floor(Math.min(vw, vh) * ratio);
-    const cx = Math.floor((vw - side) / 2);
-    const cy = Math.floor((vh - side) / 2);
-    code = jsQR(ctx.getImageData(cx, cy, side, side).data, side, side, { inversionAttempts: 'attemptBoth' });
-    attempts.push(`crop ${ratio}: ` + (code ? 'FOUND' : 'no'));
-  }
-
-  // 3. Contrast-enhanced full frame
-  if (!code) {
-    const enh = ctx.getImageData(0, 0, vw, vh);
-    const d = enh.data;
-    for (let i = 0; i < d.length; i += 4) {
-      const gray = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
-      const val = gray > 128 ? 255 : 0;
-      d[i] = d[i+1] = d[i+2] = val;
-    }
-    code = jsQR(d, vw, vh, { inversionAttempts: 'attemptBoth' });
-    attempts.push('enhanced: ' + (code ? 'FOUND' : 'no'));
-  }
-
-  if (code && code.data) {
-    lastScanTime = Date.now();
-    handleScanResult(code.data);
-  } else {
-    // Show the debug box with what we tried and screenshot preview
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
-    const box = document.getElementById('scan-result');
-    box.innerHTML = `
-      <div class="scan-result error">
-        <div class="result-icon">✕ DECODE FAILED</div>
-        <div class="result-title">本帧未识别到 QR</div>
-        <div class="result-detail" style="font-size:12px; font-family:var(--font-mono);">
-${attempts.join('\n')}
-
-分辨率: ${vw}×${vh}
-尝试姿势: 稳住、离远点、多光线</div>
-        <img src="${dataUrl}" style="width:100%; margin-top:10px; border-radius:4px; border:1px solid rgba(0,0,0,0.1);">
-        <div style="margin-top:8px; font-size:11px; opacity:0.7;">这是拍到的画面，你可以判断是不是 QR 够清晰</div>
-      </div>
-    `;
-  }
-});
-
-let scanAttempts = 0;
-let scanStartTime = 0;
 
 function scanLoop() {
   if (!scanning) return;
@@ -1157,11 +1231,9 @@ function scanLoop() {
     try {
       scanAttempts++;
 
-      // Full frame scan
       const full = ctx.getImageData(0, 0, vw, vh);
       let code = jsQR(full.data, vw, vh, { inversionAttempts: 'attemptBoth' });
 
-      // Try center crop (often more reliable when QR is centered)
       if (!code) {
         const side = Math.floor(Math.min(vw, vh) * 0.75);
         const cx = Math.floor((vw - side) / 2);
@@ -1170,7 +1242,6 @@ function scanLoop() {
         code = jsQR(crop.data, side, side, { inversionAttempts: 'attemptBoth' });
       }
 
-      // Last resort: enhance contrast (helps with screen glare / moiré)
       if (!code && scanAttempts % 3 === 0) {
         const enhanced = ctx.getImageData(0, 0, vw, vh);
         const d = enhanced.data;
@@ -1180,15 +1251,6 @@ function scanLoop() {
           d[i] = d[i+1] = d[i+2] = val;
         }
         code = jsQR(d, vw, vh, { inversionAttempts: 'attemptBoth' });
-      }
-
-      // Update status every ~15 frames (~0.5s). Show counter + resolution.
-      if (scanAttempts % 15 === 0) {
-        const elapsed = Math.floor((Date.now() - scanStartTime) / 1000);
-        const statusEl = document.getElementById('scan-status-text');
-        if (statusEl) {
-          statusEl.textContent = `扫描中 · ${scanAttempts}帧 · ${elapsed}s · ${vw}×${vh}`;
-        }
       }
 
       if (code && code.data && Date.now() - lastScanTime > 1500) {
@@ -1204,26 +1266,25 @@ function scanLoop() {
 function handleScanResult(raw) {
   stopScanner();
   const parsed = parseQRPayload(raw);
-  if (!parsed) { renderScanError('无效二维码', raw); return; }
+  if (!parsed) { renderScanError('Invalid QR code', raw); return; }
 
   let ticket = tickets.find(t => t.id === parsed.id);
 
   if (!ticket) {
     if (parsed.legacy || !parsed.name) {
-      renderScanError('本机未找到此票据', parsed.id);
+      renderScanError('Ticket not found on this device', parsed.id);
       return;
     }
-    // Rebuild from QR — cross-device scenario
     ticket = {
       id: parsed.id, name: parsed.name, count: parsed.count,
       event: parsed.event, eventDate: parsed.eventDate, venue: parsed.venue,
-      note: parsed.note, contact: parsed.contact,
+      session: parsed.session, note: parsed.note, contact: parsed.contact,
       checkedIn: 0, createdAt: parsed.createdAt || Date.now(),
       log: [], restored: true
     };
     tickets.unshift(ticket);
     saveTickets();
-    toast('✓ 从二维码恢复票据信息');
+    toast('✓ Ticket info restored from QR');
   }
 
   if (navigator.vibrate) navigator.vibrate(50);
@@ -1249,10 +1310,12 @@ function renderScanError(msg, data) {
   const box = document.getElementById('scan-result');
   box.innerHTML = `
     <div class="scan-result error">
-      <div class="result-icon">✕ ERROR</div>
-      <div class="result-title">${escapeHtml(msg)}</div>
-      <div class="result-detail">扫描内容：<code style="font-family:var(--font-mono); font-size:12px;">${escapeHtml(String(data).slice(0, 60))}</code></div>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('btn-scan-toggle').click()">再次扫描 Scan Again</button>
+      <div class="result-badge">
+        <span>✕ Error</span>
+      </div>
+      <div class="result-guest-name" style="font-size:32px;">${escapeHtml(msg)}</div>
+      <div style="margin-top:8px; font-size:13px; opacity:0.75; font-family:var(--font-mono); word-break:break-all;">${escapeHtml(String(data).slice(0, 80))}</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('btn-scan-toggle').click()" style="margin-top:16px;">Scan Again</button>
     </div>
   `;
 }
@@ -1261,54 +1324,101 @@ function renderScanSuccess(ticket, opts = {}) {
   const remaining = ticket.count - ticket.checkedIn;
   const isComplete = remaining <= 0;
   const isPartial = ticket.checkedIn > 0 && !isComplete;
-
   const box = document.getElementById('scan-result');
-  const eventLine = ticket.event
-    ? `<div class="result-event">${escapeHtml(ticket.event)}${ticket.eventDate ? ' · ' + escapeHtml(formatDate(ticket.eventDate)) : ''}</div>`
-    : '';
 
+  // Event block
+  const eventMetaParts = [];
+  if (ticket.eventDate) eventMetaParts.push(formatDate(ticket.eventDate));
+  if (ticket.session) eventMetaParts.push(ticket.session);
+  if (ticket.venue) eventMetaParts.push(ticket.venue);
+  const eventHtml = (ticket.event || eventMetaParts.length) ? `
+    <div class="result-event">
+      ${ticket.event ? `
+        <div class="result-event-label">Event</div>
+        <div class="result-event-name">${escapeHtml(ticket.event)}</div>
+      ` : ''}
+      ${eventMetaParts.length ? `<div class="result-event-meta">${escapeHtml(eventMetaParts.join(' · '))}</div>` : ''}
+    </div>
+  ` : '';
+
+  const noteHtml = ticket.note ? `
+    <div class="result-note">
+      <div class="result-note-label">Note</div>
+      ${escapeHtml(ticket.note)}
+    </div>
+  ` : '';
+
+  // ==== Just checked in (Quick mode) ====
   if (opts.justCheckedIn) {
     box.innerHTML = `
       <div class="scan-result success">
-        <div class="result-icon">✓ CHECKED IN · ${opts.justCheckedIn} 人入场</div>
-        <div class="result-title">${escapeHtml(ticket.name)}</div>
-        ${eventLine}
-        <div class="result-detail">本次共 ${opts.justCheckedIn} 人入场 · Welcome!</div>
+        <div class="result-hero">
+          <div class="result-badge">
+            <span class="result-badge-icon"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="${escapeHtml('var(--success-bg)')}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span>Checked In</span>
+          </div>
+          <div class="result-guest-label">Guest</div>
+          <div class="result-guest-name">${escapeHtml(ticket.name)}</div>
+        </div>
+        ${eventHtml}
+        ${noteHtml}
+        <div class="result-admits-block">
+          <span class="result-admits-num">${opts.justCheckedIn}</span>
+          <span class="result-admits-label">People<strong>Admitted now</strong></span>
+        </div>
         ${buildStatsHtml(ticket)}
         ${buildLogHtml(ticket)}
-        <button class="btn btn-primary btn-sm" onclick="document.getElementById('btn-scan-toggle').click()" style="margin-top:10px;">继续扫描 Next Scan</button>
+        <button class="btn btn-primary btn-sm" onclick="document.getElementById('btn-scan-toggle').click()" style="margin-top:14px;">Next Scan</button>
       </div>
     `;
     return;
   }
 
+  // ==== Already fully used ====
   if (isComplete) {
     box.innerHTML = `
       <div class="scan-result warn">
-        <div class="result-icon">⚠ ALREADY CHECKED IN</div>
-        <div class="result-title">${escapeHtml(ticket.name)}</div>
-        ${eventLine}
-        <div class="result-detail">此票据已全部使用完毕 · All tickets already used</div>
+        <div class="result-hero">
+          <div class="result-badge">
+            <span>⚠ Already Used</span>
+          </div>
+          <div class="result-guest-label">Guest</div>
+          <div class="result-guest-name">${escapeHtml(ticket.name)}</div>
+        </div>
+        ${eventHtml}
+        <div style="text-align:center; font-size:15px; margin-bottom:14px; font-style:italic;">All ${ticket.count} tickets already used.</div>
         ${buildStatsHtml(ticket)}
         ${buildLogHtml(ticket)}
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('btn-scan-toggle').click()" style="margin-top:10px;">继续扫描 Next Scan</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('btn-scan-toggle').click()" style="margin-top:14px;">Next Scan</button>
       </div>
     `;
     return;
   }
 
-  // Partial mode
+  // ==== Partial mode — needs confirmation ====
   box.innerHTML = `
     <div class="scan-result success">
-      <div class="result-icon">✓ ${isPartial ? 'PARTIAL' : 'VALID'} TICKET</div>
-      <div class="result-title">${escapeHtml(ticket.name)}</div>
-      ${eventLine}
-      <div class="result-detail">${escapeHtml(ticket.note) || '请确认入场人数 · Confirm count'}</div>
+      <div class="result-hero">
+        <div class="result-badge">
+          <span class="result-badge-icon"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="${escapeHtml('var(--success-bg)')}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span>${isPartial ? 'Partial Ticket' : 'Valid Ticket'}</span>
+        </div>
+        <div class="result-guest-label">Guest</div>
+        <div class="result-guest-name">${escapeHtml(ticket.name)}</div>
+      </div>
+      ${eventHtml}
+      ${noteHtml}
+      <div class="result-admits-block">
+        <span class="result-admits-num">${remaining}</span>
+        <span class="result-admits-label">Remaining<strong>Choose how many</strong></span>
+      </div>
       ${buildStatsHtml(ticket)}
       <div class="checkin-controls">
-        <label>入场</label>
-        <input type="number" class="form-input" id="checkin-qty" min="1" max="${remaining}" value="${remaining}">
-        <button class="btn btn-accent btn-sm" id="btn-do-checkin" style="width:auto; white-space:nowrap;">确认入场</button>
+        <div class="checkin-qty-wrap">
+          <label>Admit</label>
+          <input type="number" id="checkin-qty" min="1" max="${remaining}" value="${remaining}">
+        </div>
+        <button class="btn btn-accent btn-sm" id="btn-do-checkin" style="width:auto; white-space:nowrap; padding: 12px 22px;">Confirm</button>
       </div>
       ${buildLogHtml(ticket)}
     </div>
@@ -1323,15 +1433,15 @@ function buildStatsHtml(ticket) {
     <div class="result-stats">
       <div class="stat-item">
         <div class="stat-num">${ticket.count}</div>
-        <div class="stat-lbl">总票数 Total</div>
+        <div class="stat-lbl">Total</div>
       </div>
       <div class="stat-item">
         <div class="stat-num">${ticket.checkedIn}</div>
-        <div class="stat-lbl">已入场 Used</div>
+        <div class="stat-lbl">Used</div>
       </div>
       <div class="stat-item">
         <div class="stat-num">${remaining}</div>
-        <div class="stat-lbl">剩余 Left</div>
+        <div class="stat-lbl">Left</div>
       </div>
     </div>
   `;
@@ -1341,11 +1451,11 @@ function buildLogHtml(ticket) {
   if (!ticket.log || !ticket.log.length) return '';
   const items = ticket.log.slice().reverse().slice(0, 3).map(l => {
     const d = new Date(l.time);
-    const timeStr = d.toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+    const timeStr = d.toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
     const modeLabel = l.mode === 'quick' ? ' · quick' : '';
-    return `<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px; opacity:0.75;"><span>+${l.qty} 人入场${modeLabel}</span><span style="font-family:var(--font-mono);">${timeStr}</span></div>`;
+    return `<div class="log-item"><span>+${l.qty} admitted${modeLabel}</span><span class="log-time">${timeStr}</span></div>`;
   }).join('');
-  return `<div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.08);"><div style="font-family:var(--font-mono); font-size:10px; letter-spacing:0.12em; opacity:0.6; margin-bottom:4px;">LOG</div>${items}</div>`;
+  return `<div class="result-log"><div class="result-log-label">History</div>${items}</div>`;
 }
 
 function performCheckin(ticketId) {
@@ -1353,27 +1463,27 @@ function performCheckin(ticketId) {
   if (!t) return;
   const qty = parseInt(document.getElementById('checkin-qty').value, 10);
   const remaining = t.count - t.checkedIn;
-  if (!qty || qty < 1) { toast('请输入有效人数'); return; }
-  if (qty > remaining) { toast(`最多可入场 ${remaining} 人`); return; }
+  if (!qty || qty < 1) { toast('Enter a valid count'); return; }
+  if (qty > remaining) { toast(`Max available: ${remaining}`); return; }
   t.checkedIn += qty;
   t.log = t.log || [];
   t.log.push({ time: Date.now(), qty, mode: 'partial' });
   saveTickets();
-  toast(`✓ ${qty} 人已入场`);
+  toast(`✓ ${qty} people admitted`);
   if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
-  renderScanSuccess(t);
+  renderScanSuccess(t, { justCheckedIn: qty });
 }
 
 // Manual lookup
 document.getElementById('btn-manual-lookup').addEventListener('click', () => {
-  const id = prompt('请输入票据编号 (T-XXXXX-XXXXX)：');
+  const id = prompt('Enter ticket ID (T-XXXXX-XXXXX):');
   if (!id) return;
   const ticket = tickets.find(t => t.id === id.trim().toUpperCase());
-  if (!ticket) { renderScanError('未找到票据', id); return; }
+  if (!ticket) { renderScanError('Ticket not found', id); return; }
   renderScanSuccess(ticket);
 });
 
-// Pick image from album & decode QR
+// Pick image
 document.getElementById('btn-pick-image').addEventListener('click', () => {
   document.getElementById('pick-image-input').click();
 });
@@ -1382,27 +1492,8 @@ document.getElementById('pick-image-input').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Show loading state
-  const box = document.getElementById('scan-result');
-  box.innerHTML = `
-    <div class="scan-result" style="background: rgba(107, 127, 90, 0.1); border-color: var(--sage); color: var(--sage-dark);">
-      <div class="result-icon">⟳ DECODING</div>
-      <div class="result-title" style="font-size:18px;">正在识别图片…</div>
-      <div class="result-detail" id="pick-log" style="font-size:11px; font-family:var(--font-mono); white-space:pre-wrap;">
-文件: ${file.name}
-类型: ${file.type}
-大小: ${(file.size/1024).toFixed(1)} KB</div>
-    </div>
-  `;
-  const log = (msg) => {
-    const el = document.getElementById('pick-log');
-    if (el) el.textContent += '\n' + msg;
-  };
-
   const img = new Image();
   img.onload = () => {
-    log(`原始尺寸: ${img.width}×${img.height}`);
-
     const tryDecode = (targetSize) => {
       const canvas = document.createElement('canvas');
       let w = img.width, h = img.height;
@@ -1411,74 +1502,35 @@ document.getElementById('pick-image-input').addEventListener('change', (e) => {
         w = Math.round(w * scale);
         h = Math.round(h * scale);
       }
-      canvas.width = w;
-      canvas.height = h;
+      canvas.width = w; canvas.height = h;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       ctx.drawImage(img, 0, 0, w, h);
-
-      // Try full frame
-      const imgData = ctx.getImageData(0, 0, w, h);
-      let code = jsQR(imgData.data, w, h, { inversionAttempts: 'attemptBoth' });
-      if (code) return { code, size: `${w}×${h}`, method: 'full' };
-
-      // Try center crops
+      let code = jsQR(ctx.getImageData(0,0,w,h).data, w, h, { inversionAttempts: 'attemptBoth' });
+      if (code) return code;
       for (const ratio of [0.9, 0.75, 0.6]) {
         const side = Math.floor(Math.min(w, h) * ratio);
         const cx = Math.floor((w - side) / 2);
         const cy = Math.floor((h - side) / 2);
-        const crop = ctx.getImageData(cx, cy, side, side);
-        code = jsQR(crop.data, side, side, { inversionAttempts: 'attemptBoth' });
-        if (code) return { code, size: `${side}×${side}`, method: `crop ${ratio}` };
+        code = jsQR(ctx.getImageData(cx, cy, side, side).data, side, side, { inversionAttempts: 'attemptBoth' });
+        if (code) return code;
       }
       return null;
     };
 
-    // Try multiple resolutions
-    const sizes = [null, 2000, 1400, 1000, 700];
     let result = null;
-    for (const s of sizes) {
-      log(`尝试 ${s || 'original'}...`);
-      try {
-        result = tryDecode(s);
-        if (result) {
-          log(`✓ 识别成功 @ ${result.size} (${result.method})`);
-          break;
-        }
-      } catch(err) {
-        log(`  错误: ${err.message}`);
-      }
+    for (const s of [null, 2000, 1400, 1000, 700]) {
+      try { result = tryDecode(s); if (result) break; } catch(err) {}
     }
 
-    if (result && result.code && result.code.data) {
-      log(`数据前80字符: ${result.code.data.slice(0, 80)}`);
-      setTimeout(() => handleScanResult(result.code.data), 500);
+    if (result && result.data) {
+      handleScanResult(result.data);
     } else {
-      // Show preview + all info so user can report back
-      const previewCanvas = document.createElement('canvas');
-      const maxPreview = 400;
-      const scale = maxPreview / Math.max(img.width, img.height);
-      previewCanvas.width = img.width * scale;
-      previewCanvas.height = img.height * scale;
-      previewCanvas.getContext('2d').drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
-      const previewUrl = previewCanvas.toDataURL('image/jpeg', 0.7);
-
-      const box = document.getElementById('scan-result');
-      const currentLog = document.getElementById('pick-log').textContent;
-      box.innerHTML = `
-        <div class="scan-result error">
-          <div class="result-icon">✕ DECODE FAILED</div>
-          <div class="result-title">图片中未检测到 QR</div>
-          <div class="result-detail" style="font-size:11px; font-family:var(--font-mono); white-space:pre-wrap;">${escapeHtml(currentLog)}</div>
-          <img src="${previewUrl}" style="width:100%; margin-top:10px; border-radius:4px; border:1px solid rgba(0,0,0,0.1);">
-          <div style="margin-top:8px; font-size:11px; opacity:0.7;">↑ 你选的图片（请确认 QR 清晰完整）</div>
-        </div>
-      `;
+      renderScanError('No QR code found in image', 'Please use a clearer image.');
     }
     URL.revokeObjectURL(img.src);
   };
   img.onerror = () => {
-    log('✕ 图片读取失败 (可能是 HEIC 格式，需要先转换)');
-    renderScanError('图片读取失败', file.name + '\n\n如果是 iPhone HEIC 格式，请先转成 JPG：\n• 设置 → 相机 → 格式 → 兼容性最佳');
+    renderScanError('Failed to read image', file.name + '\n\nIf this is a HEIC file, convert to JPG first in Photos app.');
     URL.revokeObjectURL(img.src);
   };
   img.src = URL.createObjectURL(file);
@@ -1499,17 +1551,17 @@ function renderTicketsList() {
   else if (currentFilter === 'partial') filtered = tickets.filter(t => t.checkedIn > 0 && t.checkedIn < t.count);
   else if (currentFilter === 'complete') filtered = tickets.filter(t => t.checkedIn >= t.count);
 
-  document.getElementById('list-count').textContent = `── ${filtered.length} ${filtered.length === 1 ? 'record' : 'records'}`;
+  document.getElementById('list-count').textContent = `—— ${filtered.length} ${filtered.length === 1 ? 'record' : 'records'}`;
 
   if (!filtered.length) {
-    list.innerHTML = `<div class="empty-state"><p>空</p><small>NO RECORDS</small></div>`;
+    list.innerHTML = `<div class="empty-state"><p>Empty</p><small>NO RECORDS</small></div>`;
     return;
   }
 
   list.innerHTML = filtered.map(t => {
     const pct = t.count ? Math.min(100, (t.checkedIn / t.count) * 100) : 0;
     const statusClass = t.checkedIn >= t.count ? 'status-complete' : (t.checkedIn > 0 ? 'status-partial' : 'status-pending');
-    const statusText = t.checkedIn >= t.count ? '完成' : (t.checkedIn > 0 ? '部分' : '待入');
+    const statusText = t.checkedIn >= t.count ? 'Complete' : (t.checkedIn > 0 ? 'Partial' : 'Pending');
     return `
       <div class="ticket-item" data-id="${t.id}">
         <div class="ticket-item-main">
@@ -1557,16 +1609,18 @@ function loadEventToForm() {
   document.getElementById('event-name').value = eventInfo.name || '';
   document.getElementById('event-date').value = eventInfo.date || '';
   document.getElementById('event-venue').value = eventInfo.venue || '';
+  document.getElementById('event-session').value = eventInfo.session || '';
 }
 
 document.getElementById('btn-save-event').addEventListener('click', () => {
   eventInfo = {
     name: document.getElementById('event-name').value.trim(),
     date: document.getElementById('event-date').value,
-    venue: document.getElementById('event-venue').value.trim()
+    venue: document.getElementById('event-venue').value.trim(),
+    session: document.getElementById('event-session').value.trim()
   };
   saveEvent();
-  toast('✓ 活动信息已保存');
+  toast('✓ Event details saved');
 });
 
 document.getElementById('btn-export').addEventListener('click', () => {
@@ -1584,7 +1638,7 @@ document.getElementById('btn-export').addEventListener('click', () => {
   a.download = `tickets-backup-${stamp}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  toast('✓ 已导出备份');
+  toast('✓ Backup exported');
 });
 
 document.getElementById('btn-import').addEventListener('click', () => {
@@ -1600,36 +1654,36 @@ document.getElementById('import-file').addEventListener('change', (e) => {
       const data = JSON.parse(ev.target.result);
       if (!data.tickets || !Array.isArray(data.tickets)) throw new Error('invalid');
       const mergeMode = confirm(
-        `导入 ${data.tickets.length} 条记录？\n\n确定 = 合并（保留现有+添加新的）\n取消 = 覆盖（删除现有数据后导入）`
+        `Import ${data.tickets.length} records?\n\nOK = Merge (keep existing + add new)\nCancel = Replace (delete existing first)`
       );
       if (mergeMode) {
         const existingIds = new Set(tickets.map(t => t.id));
         data.tickets.forEach(t => { if (!existingIds.has(t.id)) tickets.push(t); });
       } else {
-        const really = confirm('确定要覆盖所有现有数据吗？此操作无法撤销。');
+        const really = confirm('Are you sure you want to replace all existing data? This cannot be undone.');
         if (!really) return;
         tickets = data.tickets;
       }
       if (data.event) { eventInfo = data.event; saveEvent(); loadEventToForm(); }
       saveTickets();
       renderTicketsList();
-      toast('✓ 导入成功');
-    } catch(err) { toast('文件格式无效'); }
+      toast('✓ Import complete');
+    } catch(err) { toast('Invalid file format'); }
   };
   reader.readAsText(file);
   e.target.value = '';
 });
 
 document.getElementById('btn-clear-all').addEventListener('click', () => {
-  if (!tickets.length) { toast('暂无数据'); return; }
-  const really = confirm(`确定清空全部 ${tickets.length} 条票据记录吗？\n建议先导出备份。此操作无法撤销。`);
+  if (!tickets.length) { toast('No data to clear'); return; }
+  const really = confirm(`Clear all ${tickets.length} ticket records?\nConsider exporting a backup first. This cannot be undone.`);
   if (!really) return;
-  const confirm2 = prompt('请输入 DELETE 确认清空：');
-  if (confirm2 !== 'DELETE') { toast('已取消'); return; }
+  const confirm2 = prompt('Type DELETE to confirm:');
+  if (confirm2 !== 'DELETE') { toast('Cancelled'); return; }
   tickets = [];
   saveTickets();
   renderTicketsList();
-  toast('✓ 已清空');
+  toast('✓ All data cleared');
 });
 
 // Init
@@ -1637,22 +1691,17 @@ initModeUI();
 loadEventToForm();
 renderTicketsList();
 
-// ---------- Auto check-in from URL (?t=xxx) ----------
-// When admin scans the QR with a native camera, phone opens this URL.
-// We detect the ?t= param and jump straight to check-in.
+// Auto check-in from URL (?t=xxx)
 (function handleUrlPayload() {
   const params = new URLSearchParams(location.search);
   const t = params.get('t');
   if (!t) return;
-  // Switch to scan panel
   document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelector('[data-panel="scan"]').classList.add('active');
   document.getElementById('panel-scan').classList.add('active');
-  // Process the payload through the same pipeline as a camera scan
   setTimeout(() => {
     handleScanResult(location.href);
-    // Clean up URL so refresh doesn't re-trigger
     history.replaceState({}, document.title, location.pathname);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, 100);
