@@ -413,7 +413,10 @@
 
   <div class="divider"><span class="divider-text">或 / Or</span></div>
 
-  <button class="btn btn-ghost" id="btn-manual-lookup">手动查询票据 · Manual Lookup</button>
+  <button class="btn btn-ghost" id="btn-pick-image" style="margin-bottom:10px;">从相册选择图片 · Pick from Album</button>
+  <input type="file" id="pick-image-input" accept="image/*" style="display:none;">
+
+  <button class="btn btn-ghost" id="btn-manual-lookup">手动输入编号 · Manual Lookup</button>
 
   <div id="scan-result"></div>
 </section>
@@ -865,13 +868,32 @@ scanBtn.addEventListener('click', () => {
 });
 
 async function startScanner() {
+  // Pre-flight checks
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showCameraError('此浏览器不支持摄像头 API',
+      '请确认：\n• 用的是 Safari / Chrome（不是微信/QQ 内置浏览器）\n• 网址是 https:// 开头\n• iOS 系统版本 ≥ 11');
+    return;
+  }
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    showCameraError('需要 HTTPS 才能使用摄像头',
+      `当前地址：${location.protocol}//${location.hostname}\n\n浏览器安全策略只允许 HTTPS 站点访问摄像头。请通过 https:// 开头的链接打开此页面。`);
+    return;
+  }
+
   try {
     videoStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' } },
+      video: {
+        facingMode: { ideal: 'environment' },
+        width:  { ideal: 1280 },
+        height: { ideal: 720 }
+      },
       audio: false
     });
     const video = document.getElementById('scanner-video');
     video.srcObject = videoStream;
+    video.setAttribute('playsinline', 'true');   // iOS inline play
+    video.setAttribute('muted', 'true');
+    video.muted = true;
     await video.play();
     scanning = true;
     document.getElementById('scanner-placeholder').classList.add('hidden');
@@ -883,9 +905,56 @@ async function startScanner() {
     lastScanTime = 0;
     scanLoop();
   } catch(err) {
-    console.error(err);
-    toast('无法访问摄像头，请授予权限');
+    console.error('Camera error:', err);
+    let title = '无法打开摄像头';
+    let detail = err.name + ': ' + (err.message || '');
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      title = '摄像头权限被拒绝';
+      detail = 'iPhone：设置 → Safari → 摄像头 → 选"允许"或"询问"\n然后完全关闭 Safari 重试。\n\n或在地址栏左侧的 "aA" 图标里 → 网站设置 → 允许摄像头。';
+    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+      title = '未检测到摄像头';
+      detail = '此设备没有可用的摄像头，或被其他应用占用。';
+    } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+      title = '摄像头被其他应用占用';
+      detail = '请关闭正在使用摄像头的其他应用（如微信、FaceTime）再重试。';
+    } else if (err.name === 'OverconstrainedError') {
+      // Fallback: try without facingMode constraint
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        const video = document.getElementById('scanner-video');
+        video.srcObject = videoStream;
+        video.setAttribute('playsinline', 'true');
+        video.muted = true;
+        await video.play();
+        scanning = true;
+        document.getElementById('scanner-placeholder').classList.add('hidden');
+        document.getElementById('scanner-wrap').classList.remove('hidden');
+        scanBtn.textContent = '停止扫描 · Stop';
+        scanBtn.classList.remove('btn-primary');
+        scanBtn.classList.add('btn-ghost');
+        document.getElementById('scan-result').innerHTML = '';
+        lastScanTime = 0;
+        scanLoop();
+        return;
+      } catch(e2) {
+        title = '摄像头参数不支持';
+        detail = e2.name + ': ' + (e2.message || '');
+      }
+    }
+    showCameraError(title, detail);
   }
+}
+
+function showCameraError(title, detail) {
+  const box = document.getElementById('scan-result');
+  box.innerHTML = `
+    <div class="scan-result error">
+      <div class="result-icon">✕ CAMERA ERROR</div>
+      <div class="result-title">${escapeHtml(title)}</div>
+      <div class="result-detail" style="white-space:pre-wrap; font-size:13px;">${escapeHtml(detail)}</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('btn-scan-toggle').click()" style="margin-top:10px;">再试一次 Retry</button>
+    </div>
+  `;
 }
 
 function stopScanner() {
@@ -1094,6 +1163,48 @@ document.getElementById('btn-manual-lookup').addEventListener('click', () => {
   const ticket = tickets.find(t => t.id === id.trim().toUpperCase());
   if (!ticket) { renderScanError('未找到票据', id); return; }
   renderScanSuccess(ticket);
+});
+
+// Pick image from album & decode QR
+document.getElementById('btn-pick-image').addEventListener('click', () => {
+  document.getElementById('pick-image-input').click();
+});
+
+document.getElementById('pick-image-input').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    // Downscale huge images for performance, keep aspect
+    const maxSide = 1400;
+    let w = img.width, h = img.height;
+    if (Math.max(w, h) > maxSide) {
+      const scale = maxSide / Math.max(w, h);
+      w = Math.round(w * scale);
+      h = Math.round(h * scale);
+    }
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, w, h);
+    const imgData = ctx.getImageData(0, 0, w, h);
+    // Try both inversion modes for robustness
+    let code = jsQR(imgData.data, w, h, { inversionAttempts: 'dontInvert' });
+    if (!code) code = jsQR(imgData.data, w, h, { inversionAttempts: 'attemptBoth' });
+    if (code && code.data) {
+      handleScanResult(code.data);
+    } else {
+      renderScanError('图片中未检测到二维码', '请换一张更清晰的图片');
+    }
+    URL.revokeObjectURL(img.src);
+  };
+  img.onerror = () => {
+    renderScanError('图片读取失败', file.name);
+    URL.revokeObjectURL(img.src);
+  };
+  img.src = URL.createObjectURL(file);
+  e.target.value = '';
 });
 
 // Tickets list
