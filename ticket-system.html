@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>活动票务系统 · Ticket System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --paper: #f5f1e8;
+    --paper-warm: #ede6d3;
+    --accent: #c84b31;
+    --accent-dark: #8b2f1e;
+    --sage: #6b7f5a;
+    --sage-dark: #3d4a32;
+    --muted: #8a8578;
+    --line: rgba(26, 26, 26, 0.12);
+    --line-strong: rgba(26, 26, 26, 0.25);
+    --success-bg: #dde8d5;
+    --success-ink: #3d4a32;
+    --warn-bg: #f4e4c1;
+    --warn-ink: #7a5a1a;
+    --error-bg: #f5d5cc;
+    --error-ink: #8b2f1e;
+    --font-display: 'Instrument Serif', Georgia, serif;
+    --font-body: 'Geist', -apple-system, system-ui, sans-serif;
+    --font-mono: 'Geist Mono', 'SF Mono', Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { overscroll-behavior: none; }
+  body {
+    font-family: var(--font-body);
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(200, 75, 49, 0.04), transparent 50%),
+      radial-gradient(circle at 80% 90%, rgba(107, 127, 90, 0.04), transparent 50%);
+  }
+  .masthead { padding: 28px 20px 20px; border-bottom: 1px solid var(--line); background: var(--paper); }
+  .masthead-top {
+    display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .masthead h1 {
+    font-family: var(--font-display); font-size: 36px; font-weight: 400;
+    line-height: 1; letter-spacing: -0.01em;
+  }
+  .masthead h1 em { font-style: italic; color: var(--accent); }
+  .masthead-sub {
+    margin-top: 8px; font-size: 13px; color: var(--muted);
+    font-family: var(--font-mono); letter-spacing: 0.02em;
+  }
+  .tabs {
+    display: flex; border-bottom: 1px solid var(--line); background: var(--paper);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .tab {
+    flex: 1; padding: 14px 8px; background: transparent; border: none;
+    border-bottom: 2px solid transparent; font-family: var(--font-body);
+    font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+  .tab:active { background: rgba(26, 26, 26, 0.03); }
+  .tab-label-cn { display: block; font-size: 14px; }
+  .tab-label-en {
+    display: block; font-size: 9px; font-family: var(--font-mono);
+    letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; opacity: 0.6;
+  }
+  .panel { display: none; padding: 24px 20px 80px; animation: fadeIn 0.3s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .form-group { margin-bottom: 18px; }
+  .form-label {
+    display: block; font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+  }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 12px 14px; background: var(--paper-warm);
+    border: 1px solid var(--line); border-radius: 2px; font-family: var(--font-body);
+    font-size: 15px; color: var(--ink); transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none; border-color: var(--ink); background: #fff;
+  }
+  .form-textarea { resize: vertical; min-height: 60px; font-family: var(--font-body); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 13px 20px; border: none; border-radius: 2px; font-family: var(--font-body);
+    font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s ease;
+    letter-spacing: 0.01em; text-decoration: none;
+  }
+  .btn-primary { background: var(--ink); color: var(--paper); width: 100%; }
+  .btn-primary:active { transform: scale(0.98); background: #000; }
+  .btn-accent { background: var(--accent); color: #fff; width: 100%; }
+  .btn-accent:active { transform: scale(0.98); background: var(--accent-dark); }
+  .btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line-strong); }
+  .btn-ghost:active { background: var(--paper-warm); }
+  .btn-sm { padding: 8px 14px; font-size: 13px; }
+  .btn-danger {
+    color: var(--accent-dark); background: transparent;
+    border: 1px solid rgba(200, 75, 49, 0.3);
+  }
+  .btn-danger:active { background: var(--error-bg); }
+  .ticket-card {
+    background: #fff; border: 1px solid var(--line); border-radius: 3px;
+    padding: 24px 20px; margin-top: 20px; position: relative;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.02), 0 8px 24px -12px rgba(0,0,0,0.1);
+  }
+  .ticket-card::before, .ticket-card::after {
+    content: ''; position: absolute; width: 14px; height: 14px;
+    background: var(--paper); border-radius: 50%; top: 50%; transform: translateY(-50%);
+  }
+  .ticket-card::before { left: -7px; }
+  .ticket-card::after { right: -7px; }
+  .ticket-header {
+    text-align: center; border-bottom: 1px dashed var(--line-strong);
+    padding-bottom: 16px; margin-bottom: 16px;
+  }
+  .ticket-event { font-family: var(--font-display); font-size: 22px; line-height: 1.1; margin-bottom: 4px; }
+  .ticket-meta {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .qr-container { display: flex; justify-content: center; padding: 8px; background: #fff; }
+  .qr-container img, .qr-container canvas { display: block; width: 220px !important; height: 220px !important; }
+  .ticket-info {
+    margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--line-strong);
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .info-label {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 3px;
+  }
+  .info-value { font-size: 14px; font-weight: 500; }
+  .info-value.big {
+    font-family: var(--font-display); font-size: 28px; font-weight: 400;
+    color: var(--accent); line-height: 1;
+  }
+  .ticket-id {
+    margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--line-strong);
+    text-align: center; font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.15em; color: var(--muted); word-break: break-all;
+  }
+  .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .scanner-wrap {
+    position: relative; background: var(--ink); border-radius: 3px;
+    overflow: hidden; aspect-ratio: 1; margin-bottom: 16px;
+  }
+  #scanner-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #scanner-canvas { display: none; }
+  .scanner-overlay {
+    position: absolute; inset: 0; pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .scanner-frame {
+    width: 65%; aspect-ratio: 1; border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 4px; position: relative;
+  }
+  .scanner-frame::before, .scanner-frame::after,
+  .scanner-frame > span::before, .scanner-frame > span::after {
+    content: ''; position: absolute; width: 24px; height: 24px; border: 3px solid var(--accent);
+  }
+  .scanner-frame::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+  .scanner-frame::after { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+  .scanner-frame > span::before { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+  .scanner-frame > span::after { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+  .scanner-placeholder {
+    aspect-ratio: 1; background: var(--paper-warm); border: 1px dashed var(--line-strong);
+    border-radius: 3px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; margin-bottom: 16px; padding: 20px; text-align: center;
+  }
+  .scanner-icon { width: 56px; height: 56px; stroke: var(--muted); stroke-width: 1.5; fill: none; }
+  .scanner-placeholder p { color: var(--muted); font-size: 13px; max-width: 240px; }
+  .mode-toggle {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 16px;
+    background: var(--paper-warm); border: 1px solid var(--line);
+    border-radius: 2px; padding: 3px;
+  }
+  .mode-btn {
+    padding: 10px 8px; background: transparent; border: none; border-radius: 2px;
+    font-family: var(--font-body); font-size: 13px; font-weight: 500;
+    color: var(--muted); cursor: pointer; transition: all 0.2s ease;
+  }
+  .mode-btn.active { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+  .mode-btn small {
+    display: block; font-size: 10px; font-family: var(--font-mono);
+    letter-spacing: 0.08em; opacity: 0.6; margin-top: 2px; text-transform: uppercase;
+  }
+  .scan-result {
+    margin-top: 16px; padding: 20px; border-radius: 3px;
+    border: 1px solid; animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .scan-result.success { background: var(--success-bg); border-color: rgba(61, 74, 50, 0.25); color: var(--success-ink); }
+  .scan-result.warn { background: var(--warn-bg); border-color: rgba(122, 90, 26, 0.25); color: var(--warn-ink); }
+  .scan-result.error { background: var(--error-bg); border-color: rgba(139, 47, 30, 0.25); color: var(--error-ink); }
+  .result-icon {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.15em;
+    text-transform: uppercase; opacity: 0.7; margin-bottom: 6px;
+  }
+  .result-title { font-family: var(--font-display); font-size: 24px; margin-bottom: 4px; line-height: 1.1; }
+  .result-detail { font-size: 14px; margin-bottom: 12px; opacity: 0.85; }
+  .result-event {
+    font-size: 12px; font-family: var(--font-mono); letter-spacing: 0.08em;
+    opacity: 0.6; margin-bottom: 10px; text-transform: uppercase;
+  }
+  .result-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    margin: 14px 0; padding: 12px; background: rgba(255,255,255,0.4); border-radius: 2px;
+  }
+  .stat-item { text-align: center; }
+  .stat-num { font-family: var(--font-display); font-size: 24px; line-height: 1; margin-bottom: 2px; }
+  .stat-lbl { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7; }
+  .checkin-controls { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+  .checkin-controls label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; white-space: nowrap; }
+  .checkin-controls .form-input {
+    flex: 1; padding: 10px 12px; font-size: 14px;
+    background: rgba(255,255,255,0.6); min-width: 60px;
+  }
+  .list-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .list-title { font-family: var(--font-display); font-size: 22px; }
+  .list-count { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 0.1em; }
+  .ticket-item {
+    background: #fff; border: 1px solid var(--line); border-radius: 3px;
+    padding: 14px 16px; margin-bottom: 10px; display: grid;
+    grid-template-columns: 1fr auto; gap: 10px; align-items: center; cursor: pointer;
+  }
+  .ticket-item:active { background: var(--paper-warm); }
+  .ticket-item-main { min-width: 0; }
+  .ticket-item-name {
+    font-weight: 500; font-size: 15px; margin-bottom: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .ticket-item-id { font-family: var(--font-mono); font-size: 10px; color: var(--muted); letter-spacing: 0.05em; }
+  .ticket-item-progress { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; color: var(--muted); }
+  .progress-bar { flex: 1; height: 3px; background: var(--paper-warm); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--sage); transition: width 0.3s ease; }
+  .progress-fill.full { background: var(--accent); }
+  .ticket-item-status {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 4px 8px; border-radius: 2px; white-space: nowrap;
+  }
+  .status-pending { background: var(--paper-warm); color: var(--muted); }
+  .status-partial { background: var(--warn-bg); color: var(--warn-ink); }
+  .status-complete { background: var(--success-bg); color: var(--success-ink); }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-state p { font-family: var(--font-display); font-size: 20px; font-style: italic; margin-bottom: 4px; }
+  .empty-state small { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+  .stat-card { background: #fff; border: 1px solid var(--line); border-radius: 3px; padding: 16px; }
+  .stat-card-label {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+  }
+  .stat-card-num { font-family: var(--font-display); font-size: 36px; line-height: 1; }
+  .stat-card-sub { font-size: 12px; color: var(--muted); margin-top: 4px; font-family: var(--font-mono); }
+  .stat-card.accent .stat-card-num { color: var(--accent); }
+  .stat-card.sage .stat-card-num { color: var(--sage-dark); }
+  .filter-row {
+    display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto;
+    -webkit-overflow-scrolling: touch; padding-bottom: 2px;
+  }
+  .filter-chip {
+    padding: 6px 12px; background: transparent; border: 1px solid var(--line);
+    border-radius: 100px; font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.05em; color: var(--muted); cursor: pointer;
+    white-space: nowrap; transition: all 0.15s ease;
+  }
+  .filter-chip.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .toast {
+    position: fixed; bottom: 20px; left: 50%;
+    transform: translateX(-50%) translateY(120px);
+    background: var(--ink); color: var(--paper); padding: 12px 20px;
+    border-radius: 100px; font-size: 13px; font-weight: 500; z-index: 1000;
+    transition: transform 0.3s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    max-width: 80%; text-align: center;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .divider { display: flex; align-items: center; gap: 10px; margin: 20px 0; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .divider-text {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .settings-section {
+    background: #fff; border: 1px solid var(--line); border-radius: 3px;
+    padding: 18px; margin-bottom: 14px;
+  }
+  .settings-title { font-family: var(--font-display); font-size: 20px; margin-bottom: 4px; }
+  .settings-desc { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+  .event-title-big {
+    font-family: var(--font-display); font-size: 26px; font-weight: 400;
+    line-height: 1.1; padding: 12px 0; border: none; background: transparent; width: 100%;
+  }
+  .event-title-big:focus { outline: none; }
+  .event-title-big::placeholder { color: var(--muted); font-style: italic; }
+  .mode-hint {
+    padding: 10px 14px; margin-bottom: 14px;
+    background: rgba(200, 75, 49, 0.06); border-left: 2px solid var(--accent);
+    font-size: 12px; color: var(--accent-dark); line-height: 1.5;
+  }
+  .mode-hint.sage { background: rgba(107, 127, 90, 0.08); border-left-color: var(--sage); color: var(--sage-dark); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-top">
+    <span>№ 001</span>
+    <span id="today-date">——</span>
+  </div>
+  <h1>活动<em>票务</em></h1>
+  <div class="masthead-sub">Ticketing & Check-in · Local</div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab active" data-panel="generate" role="tab">
+    <span class="tab-label-cn">出票</span>
+    <span class="tab-label-en">Issue</span>
+  </button>
+  <button class="tab" data-panel="scan" role="tab">
+    <span class="tab-label-cn">检票</span>
+    <span class="tab-label-en">Scan</span>
+  </button>
+  <button class="tab" data-panel="tickets" role="tab">
+    <span class="tab-label-cn">票单</span>
+    <span class="tab-label-en">List</span>
+  </button>
+  <button class="tab" data-panel="settings" role="tab">
+    <span class="tab-label-cn">设置</span>
+    <span class="tab-label-en">Config</span>
+  </button>
+</nav>
+
+<!-- ============ Panel: Generate ============ -->
+<section class="panel active" id="panel-generate" role="tabpanel">
+  <div class="form-group">
+    <label class="form-label">家长姓名 · Parent Name</label>
+    <input type="text" class="form-input" id="parent-name" placeholder="张妈妈 / Ms. Zhang" autocomplete="off">
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">票数 · Quantity</label>
+      <input type="number" class="form-input" id="ticket-count" value="1" min="1" max="20">
+    </div>
+    <div class="form-group">
+      <label class="form-label">联系方式 · Contact</label>
+      <input type="text" class="form-input" id="parent-contact" placeholder="选填 Optional" autocomplete="off">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">备注 · Note</label>
+    <textarea class="form-textarea" id="ticket-note" placeholder="例如：包含 2 名儿童 / Contains 2 children" rows="2"></textarea>
+  </div>
+  <button class="btn btn-accent" id="btn-generate">生成二维码 · Generate QR</button>
+  <div id="qr-output"></div>
+</section>
+
+<!-- ============ Panel: Scan ============ -->
+<section class="panel" id="panel-scan" role="tabpanel">
+  <div class="mode-toggle" role="group" aria-label="检票模式">
+    <button class="mode-btn active" data-mode="quick">
+      快速模式
+      <small>Quick · Admit all</small>
+    </button>
+    <button class="mode-btn" data-mode="partial">
+      分次模式
+      <small>Partial</small>
+    </button>
+  </div>
+
+  <div id="mode-hint" class="mode-hint sage">
+    <strong>快速模式</strong>：扫描即全家入场，适合一次性到齐的家庭。
+  </div>
+
+  <div id="scanner-placeholder" class="scanner-placeholder">
+    <svg class="scanner-icon" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="7" height="7" rx="1"/>
+      <rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <path d="M14 14h3v3h-3zM18 18h3v3h-3zM14 18h1M18 14h1"/>
+    </svg>
+    <p>点击下方开始扫描家长提供的二维码<br><small style="opacity:.7;">Tap below to start scanning</small></p>
+  </div>
+
+  <div class="scanner-wrap hidden" id="scanner-wrap">
+    <video id="scanner-video" playsinline muted autoplay></video>
+    <canvas id="scanner-canvas"></canvas>
+    <div class="scanner-overlay">
+      <div class="scanner-frame"><span></span></div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="btn-scan-toggle">开始扫描 · Start Scanning</button>
+
+  <div class="divider"><span class="divider-text">或 / Or</span></div>
+
+  <button class="btn btn-ghost" id="btn-manual-lookup">手动查询票据 · Manual Lookup</button>
+
+  <div id="scan-result"></div>
+</section>
+
+<!-- ============ Panel: Tickets List ============ -->
+<section class="panel" id="panel-tickets" role="tabpanel">
+  <div class="stats-grid">
+    <div class="stat-card sage">
+      <div class="stat-card-label">已发出 / Issued</div>
+      <div class="stat-card-num" id="stat-issued">0</div>
+      <div class="stat-card-sub">组 groups</div>
+    </div>
+    <div class="stat-card accent">
+      <div class="stat-card-label">已入场 / Checked in</div>
+      <div class="stat-card-num" id="stat-checked">0</div>
+      <div class="stat-card-sub">/ <span id="stat-total">0</span> 人 people</div>
+    </div>
+  </div>
+
+  <div class="list-header">
+    <span class="list-title">票据记录</span>
+    <span class="list-count" id="list-count">—— 0 records</span>
+  </div>
+
+  <div class="filter-row">
+    <button class="filter-chip active" data-filter="all">全部 All</button>
+    <button class="filter-chip" data-filter="pending">未入场 Pending</button>
+    <button class="filter-chip" data-filter="partial">部分 Partial</button>
+    <button class="filter-chip" data-filter="complete">完成 Complete</button>
+  </div>
+
+  <div id="tickets-list"></div>
+</section>
+
+<!-- ============ Panel: Settings ============ -->
+<section class="panel" id="panel-settings" role="tabpanel">
+  <div class="settings-section">
+    <div class="settings-title">活动信息</div>
+    <div class="settings-desc">Event details — embedded into every QR code</div>
+    <input type="text" class="event-title-big" id="event-name" placeholder="输入活动名称..." autocomplete="off">
+    <div class="form-row" style="margin-top:10px;">
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">日期 Date</label>
+        <input type="date" class="form-input" id="event-date">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">地点 Venue</label>
+        <input type="text" class="form-input" id="event-venue" placeholder="选填">
+      </div>
+    </div>
+    <button class="btn btn-primary btn-sm" id="btn-save-event" style="margin-top:14px; width:auto;">保存 Save</button>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-title">数据备份</div>
+    <div class="settings-desc">Export or import your ticket database as JSON.</div>
+    <div class="action-row">
+      <button class="btn btn-ghost btn-sm" id="btn-export">导出 Export</button>
+      <button class="btn btn-ghost btn-sm" id="btn-import">导入 Import</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none;">
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-title">危险操作</div>
+    <div class="settings-desc">Clear all ticket records. Cannot be undone.</div>
+    <button class="btn btn-danger btn-sm" id="btn-clear-all" style="width:100%;">清空所有数据 Clear All Data</button>
+  </div>
+
+  <div style="text-align:center; padding:20px 0; color:var(--muted); font-family:var(--font-mono); font-size:10px; letter-spacing:0.15em;">
+    RUNS 100% LOCALLY · NO SERVER
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORE_KEY = 'ticket_sys_v2';
+const EVENT_KEY = 'ticket_sys_event_v2';
+const MODE_KEY = 'ticket_sys_mode_v2';
+
+let tickets = loadTickets();
+let eventInfo = loadEvent();
+let currentFilter = 'all';
+let scanMode = localStorage.getItem(MODE_KEY) || 'quick';
+let scanning = false;
+let videoStream = null;
+let rafId = null;
+let lastScanTime = 0;
+
+function shortId() {
+  const t = Date.now().toString(36).toUpperCase().slice(-5);
+  const r = Math.random().toString(36).toUpperCase().slice(2, 7);
+  return `T-${t}-${r}`;
+}
+
+function loadTickets() {
+  try { const raw = localStorage.getItem(STORE_KEY); return raw ? JSON.parse(raw) : []; }
+  catch(e) { return []; }
+}
+function saveTickets() { localStorage.setItem(STORE_KEY, JSON.stringify(tickets)); }
+
+function loadEvent() {
+  try { const raw = localStorage.getItem(EVENT_KEY); return raw ? JSON.parse(raw) : { name:'', date:'', venue:'' }; }
+  catch(e) { return { name:'', date:'', venue:'' }; }
+}
+function saveEvent() { localStorage.setItem(EVENT_KEY, JSON.stringify(eventInfo)); }
+
+function toast(msg, duration = 2200) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  try { return new Date(d).toLocaleDateString('zh-CN', { month:'short', day:'numeric', year:'numeric' }); }
+  catch(e) { return d; }
+}
+
+// Build QR payload with FULL info
+function buildQRPayload(ticket) {
+  const obj = {
+    v: 1,
+    i: ticket.id,
+    n: ticket.name,
+    q: ticket.count,
+    e: ticket.event || '',
+    d: ticket.eventDate || '',
+    l: ticket.venue || '',
+    c: ticket.createdAt
+  };
+  if (ticket.note) obj.t = ticket.note;
+  if (ticket.contact) obj.x = ticket.contact;
+  return 'TKT:' + JSON.stringify(obj);
+}
+
+function parseQRPayload(raw) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  if (s.startsWith('TKT:')) {
+    try {
+      const obj = JSON.parse(s.slice(4));
+      if (obj.v === 1 && obj.i && obj.n && obj.q) {
+        return {
+          id: obj.i, name: obj.n, count: obj.q,
+          event: obj.e || '', eventDate: obj.d || '', venue: obj.l || '',
+          note: obj.t || '', contact: obj.x || '',
+          createdAt: obj.c || Date.now(), fromQR: true
+        };
+      }
+    } catch(e) {}
+  }
+  if (/^T-[A-Z0-9]+-[A-Z0-9]+$/.test(s)) {
+    return { id: s, fromQR: true, legacy: true };
+  }
+  return null;
+}
+
+// Today label
+(function() {
+  const d = new Date();
+  const mon = d.toLocaleString('en', { month: 'short' }).toUpperCase();
+  document.getElementById('today-date').textContent = `${mon} ${d.getDate()}, ${d.getFullYear()}`;
+})();
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const panelName = tab.dataset.panel;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + panelName).classList.add('active');
+    if (panelName !== 'scan' && scanning) stopScanner();
+    if (panelName === 'tickets') renderTicketsList();
+  });
+});
+
+// Generate
+document.getElementById('btn-generate').addEventListener('click', generateTicket);
+
+function generateTicket() {
+  const name = document.getElementById('parent-name').value.trim();
+  const count = parseInt(document.getElementById('ticket-count').value, 10);
+  const contact = document.getElementById('parent-contact').value.trim();
+  const note = document.getElementById('ticket-note').value.trim();
+
+  if (!name) { toast('请输入家长姓名'); document.getElementById('parent-name').focus(); return; }
+  if (!count || count < 1) { toast('票数至少为 1'); return; }
+
+  const ticket = {
+    id: shortId(),
+    name, count, contact, note,
+    event: eventInfo.name || '',
+    eventDate: eventInfo.date || '',
+    venue: eventInfo.venue || '',
+    checkedIn: 0,
+    createdAt: Date.now(),
+    log: []
+  };
+  tickets.unshift(ticket);
+  saveTickets();
+  renderQR(ticket);
+  document.getElementById('parent-name').value = '';
+  document.getElementById('ticket-count').value = '1';
+  document.getElementById('parent-contact').value = '';
+  document.getElementById('ticket-note').value = '';
+  toast('✓ 已生成二维码');
+}
+
+function renderQR(ticket) {
+  const payload = buildQRPayload(ticket);
+  const out = document.getElementById('qr-output');
+  out.innerHTML = `
+    <div class="ticket-card">
+      <div class="ticket-header">
+        <div class="ticket-event">${escapeHtml(ticket.event) || '活动通票 · Event Pass'}</div>
+        <div class="ticket-meta">${escapeHtml(formatDate(ticket.eventDate)) || 'ADMIT ALL'} ${ticket.venue ? '· ' + escapeHtml(ticket.venue) : ''}</div>
+      </div>
+      <div class="qr-container" id="qr-target"></div>
+      <div class="ticket-info">
+        <div>
+          <div class="info-label">Guest</div>
+          <div class="info-value">${escapeHtml(ticket.name)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="info-label">Admits</div>
+          <div class="info-value big">${ticket.count}</div>
+        </div>
+      </div>
+      ${ticket.note ? `<div style="margin-top:10px; font-size:12px; color:var(--muted); font-style:italic;">${escapeHtml(ticket.note)}</div>` : ''}
+      <div class="ticket-id">${ticket.id}</div>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-ghost btn-sm" id="btn-download-qr">下载图片 Download</button>
+      <button class="btn btn-ghost btn-sm" id="btn-share-qr">分享 Share</button>
+    </div>
+  `;
+
+  new QRCode(document.getElementById('qr-target'), {
+    text: payload,
+    width: 220, height: 220,
+    colorDark: '#1a1a1a', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  document.getElementById('btn-download-qr').addEventListener('click', () => downloadTicket(ticket));
+  document.getElementById('btn-share-qr').addEventListener('click', () => shareTicket(ticket));
+
+  setTimeout(() => out.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+}
+
+async function downloadTicket(ticket) {
+  const canvas = await renderTicketCanvas(ticket);
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ticket-${ticket.name}-${ticket.id}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('✓ 图片已下载');
+  }, 'image/png');
+}
+
+async function shareTicket(ticket) {
+  const canvas = await renderTicketCanvas(ticket);
+  canvas.toBlob(async blob => {
+    const file = new File([blob], `ticket-${ticket.id}.png`, { type: 'image/png' });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: `${ticket.event || '活动票'} · ${ticket.name}`,
+          text: `${ticket.name} - ${ticket.count} 张票`
+        });
+      } catch(e) { if (e.name !== 'AbortError') toast('分享取消'); }
+    } else {
+      downloadTicket(ticket);
+      toast('此设备不支持直接分享，已下载图片');
+    }
+  }, 'image/png');
+}
+
+function renderTicketCanvas(ticket) {
+  return new Promise(resolve => {
+    const W = 600, H = 900;
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#f5f1e8';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#ffffff';
+    const pad = 40;
+    ctx.fillRect(pad, pad, W - pad*2, H - pad*2);
+    ctx.strokeStyle = 'rgba(26,26,26,0.12)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(pad, pad, W - pad*2, H - pad*2);
+
+    ctx.fillStyle = '#1a1a1a';
+    ctx.textAlign = 'center';
+    ctx.font = '400 42px Georgia, serif';
+    const title = ticket.event || '活动通票 · Event Pass';
+    ctx.fillText(title, W/2, 130);
+
+    ctx.font = '500 14px "SF Mono", monospace';
+    ctx.fillStyle = '#8a8578';
+    const subParts = [];
+    if (ticket.eventDate) subParts.push(formatDate(ticket.eventDate).toUpperCase());
+    if (ticket.venue) subParts.push(ticket.venue.toUpperCase());
+    if (!subParts.length) subParts.push('ADMIT ALL');
+    ctx.fillText(subParts.join('  ·  '), W/2, 160);
+
+    drawDashed(ctx, pad + 30, 190, W - pad - 30, 190);
+
+    const qrSize = 320;
+    const qrX = (W - qrSize) / 2;
+    const qrY = 220;
+
+    const payload = buildQRPayload(ticket);
+    const temp = document.createElement('div');
+    temp.style.position = 'absolute';
+    temp.style.left = '-9999px';
+    document.body.appendChild(temp);
+    new QRCode(temp, {
+      text: payload, width: qrSize, height: qrSize,
+      colorDark: '#1a1a1a', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    setTimeout(() => {
+      const qrCanvas = temp.querySelector('canvas');
+      const qrImg = temp.querySelector('img');
+      if (qrCanvas) { ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize); finishDraw(); }
+      else if (qrImg) {
+        const img = new Image();
+        img.onload = () => { ctx.drawImage(img, qrX, qrY, qrSize, qrSize); finishDraw(); };
+        img.src = qrImg.src;
+      } else { finishDraw(); }
+
+      function finishDraw() {
+        document.body.removeChild(temp);
+        drawDashed(ctx, pad + 30, qrY + qrSize + 30, W - pad - 30, qrY + qrSize + 30);
+
+        ctx.textAlign = 'left';
+        ctx.font = '500 11px "SF Mono", monospace';
+        ctx.fillStyle = '#8a8578';
+        ctx.fillText('GUEST', pad + 40, qrY + qrSize + 70);
+
+        ctx.font = '500 22px Georgia, serif';
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillText(ticket.name, pad + 40, qrY + qrSize + 100);
+
+        ctx.textAlign = 'right';
+        ctx.font = '500 11px "SF Mono", monospace';
+        ctx.fillStyle = '#8a8578';
+        ctx.fillText('ADMITS', W - pad - 40, qrY + qrSize + 70);
+
+        ctx.font = '400 56px Georgia, serif';
+        ctx.fillStyle = '#c84b31';
+        ctx.fillText(String(ticket.count), W - pad - 40, qrY + qrSize + 120);
+
+        if (ticket.note) {
+          ctx.textAlign = 'center';
+          ctx.font = 'italic 14px Georgia, serif';
+          ctx.fillStyle = '#8a8578';
+          wrapText(ctx, ticket.note, W/2, qrY + qrSize + 165, W - pad*2 - 60, 20);
+        }
+
+        drawDashed(ctx, pad + 30, H - pad - 70, W - pad - 30, H - pad - 70);
+
+        ctx.textAlign = 'center';
+        ctx.font = '500 12px "SF Mono", monospace';
+        ctx.fillStyle = '#8a8578';
+        ctx.fillText(ticket.id, W/2, H - pad - 40);
+        resolve(canvas);
+      }
+    }, 150);
+  });
+}
+
+function drawDashed(ctx, x1, y1, x2, y2) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(26,26,26,0.25)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const chars = text.split('');
+  let line = '', lines = [];
+  for (let i = 0; i < chars.length; i++) {
+    const test = line + chars[i];
+    if (ctx.measureText(test).width > maxWidth && line !== '') {
+      lines.push(line); line = chars[i];
+    } else { line = test; }
+  }
+  if (line) lines.push(line);
+  lines.slice(0, 2).forEach((ln, i) => ctx.fillText(ln, x, y + i * lineHeight));
+}
+
+// Mode toggle
+function updateModeHint() {
+  const hint = document.getElementById('mode-hint');
+  if (scanMode === 'quick') {
+    hint.className = 'mode-hint sage';
+    hint.innerHTML = '<strong>快速模式</strong>：扫描即全家入场，适合一次性到齐的家庭。';
+  } else {
+    hint.className = 'mode-hint';
+    hint.innerHTML = '<strong>分次模式</strong>：扫描后确认人数，适合家人分批到达（4张票先来2个人，下次再来2个）。';
+  }
+}
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    scanMode = btn.dataset.mode;
+    localStorage.setItem(MODE_KEY, scanMode);
+    updateModeHint();
+    toast(scanMode === 'quick' ? '✓ 已切换到快速模式' : '✓ 已切换到分次模式');
+  });
+});
+
+function initModeUI() {
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === scanMode);
+  });
+  updateModeHint();
+}
+
+// Scanner
+const scanBtn = document.getElementById('btn-scan-toggle');
+scanBtn.addEventListener('click', () => {
+  if (scanning) stopScanner(); else startScanner();
+});
+
+async function startScanner() {
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false
+    });
+    const video = document.getElementById('scanner-video');
+    video.srcObject = videoStream;
+    await video.play();
+    scanning = true;
+    document.getElementById('scanner-placeholder').classList.add('hidden');
+    document.getElementById('scanner-wrap').classList.remove('hidden');
+    scanBtn.textContent = '停止扫描 · Stop';
+    scanBtn.classList.remove('btn-primary');
+    scanBtn.classList.add('btn-ghost');
+    document.getElementById('scan-result').innerHTML = '';
+    lastScanTime = 0;
+    scanLoop();
+  } catch(err) {
+    console.error(err);
+    toast('无法访问摄像头，请授予权限');
+  }
+}
+
+function stopScanner() {
+  scanning = false;
+  if (rafId) cancelAnimationFrame(rafId);
+  if (videoStream) {
+    videoStream.getTracks().forEach(t => t.stop());
+    videoStream = null;
+  }
+  document.getElementById('scanner-placeholder').classList.remove('hidden');
+  document.getElementById('scanner-wrap').classList.add('hidden');
+  scanBtn.textContent = '开始扫描 · Start Scanning';
+  scanBtn.classList.remove('btn-ghost');
+  scanBtn.classList.add('btn-primary');
+}
+
+function scanLoop() {
+  if (!scanning) return;
+  const video = document.getElementById('scanner-video');
+  const canvas = document.getElementById('scanner-canvas');
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    try {
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+      if (code && code.data && Date.now() - lastScanTime > 1500) {
+        lastScanTime = Date.now();
+        handleScanResult(code.data);
+        return;
+      }
+    } catch(e) {}
+  }
+  rafId = requestAnimationFrame(scanLoop);
+}
+
+function handleScanResult(raw) {
+  stopScanner();
+  const parsed = parseQRPayload(raw);
+  if (!parsed) { renderScanError('无效二维码', raw); return; }
+
+  let ticket = tickets.find(t => t.id === parsed.id);
+
+  if (!ticket) {
+    if (parsed.legacy || !parsed.name) {
+      renderScanError('本机未找到此票据', parsed.id);
+      return;
+    }
+    // Rebuild from QR — cross-device scenario
+    ticket = {
+      id: parsed.id, name: parsed.name, count: parsed.count,
+      event: parsed.event, eventDate: parsed.eventDate, venue: parsed.venue,
+      note: parsed.note, contact: parsed.contact,
+      checkedIn: 0, createdAt: parsed.createdAt || Date.now(),
+      log: [], restored: true
+    };
+    tickets.unshift(ticket);
+    saveTickets();
+    toast('✓ 从二维码恢复票据信息');
+  }
+
+  if (navigator.vibrate) navigator.vibrate(50);
+
+  if (scanMode === 'quick') {
+    const remaining = ticket.count - ticket.checkedIn;
+    if (remaining <= 0) {
+      renderScanSuccess(ticket);
+    } else {
+      ticket.checkedIn += remaining;
+      ticket.log = ticket.log || [];
+      ticket.log.push({ time: Date.now(), qty: remaining, mode: 'quick' });
+      saveTickets();
+      if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+      renderScanSuccess(ticket, { justCheckedIn: remaining });
+    }
+  } else {
+    renderScanSuccess(ticket);
+  }
+}
+
+function renderScanError(msg, data) {
+  const box = document.getElementById('scan-result');
+  box.innerHTML = `
+    <div class="scan-result error">
+      <div class="result-icon">✕ ERROR</div>
+      <div class="result-title">${escapeHtml(msg)}</div>
+      <div class="result-detail">扫描内容：<code style="font-family:var(--font-mono); font-size:12px;">${escapeHtml(String(data).slice(0, 60))}</code></div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('btn-scan-toggle').click()">再次扫描 Scan Again</button>
+    </div>
+  `;
+}
+
+function renderScanSuccess(ticket, opts = {}) {
+  const remaining = ticket.count - ticket.checkedIn;
+  const isComplete = remaining <= 0;
+  const isPartial = ticket.checkedIn > 0 && !isComplete;
+
+  const box = document.getElementById('scan-result');
+  const eventLine = ticket.event
+    ? `<div class="result-event">${escapeHtml(ticket.event)}${ticket.eventDate ? ' · ' + escapeHtml(formatDate(ticket.eventDate)) : ''}</div>`
+    : '';
+
+  if (opts.justCheckedIn) {
+    box.innerHTML = `
+      <div class="scan-result success">
+        <div class="result-icon">✓ CHECKED IN · ${opts.justCheckedIn} 人入场</div>
+        <div class="result-title">${escapeHtml(ticket.name)}</div>
+        ${eventLine}
+        <div class="result-detail">本次共 ${opts.justCheckedIn} 人入场 · Welcome!</div>
+        ${buildStatsHtml(ticket)}
+        ${buildLogHtml(ticket)}
+        <button class="btn btn-primary btn-sm" onclick="document.getElementById('btn-scan-toggle').click()" style="margin-top:10px;">继续扫描 Next Scan</button>
+      </div>
+    `;
+    return;
+  }
+
+  if (isComplete) {
+    box.innerHTML = `
+      <div class="scan-result warn">
+        <div class="result-icon">⚠ ALREADY CHECKED IN</div>
+        <div class="result-title">${escapeHtml(ticket.name)}</div>
+        ${eventLine}
+        <div class="result-detail">此票据已全部使用完毕 · All tickets already used</div>
+        ${buildStatsHtml(ticket)}
+        ${buildLogHtml(ticket)}
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('btn-scan-toggle').click()" style="margin-top:10px;">继续扫描 Next Scan</button>
+      </div>
+    `;
+    return;
+  }
+
+  // Partial mode
+  box.innerHTML = `
+    <div class="scan-result success">
+      <div class="result-icon">✓ ${isPartial ? 'PARTIAL' : 'VALID'} TICKET</div>
+      <div class="result-title">${escapeHtml(ticket.name)}</div>
+      ${eventLine}
+      <div class="result-detail">${escapeHtml(ticket.note) || '请确认入场人数 · Confirm count'}</div>
+      ${buildStatsHtml(ticket)}
+      <div class="checkin-controls">
+        <label>入场</label>
+        <input type="number" class="form-input" id="checkin-qty" min="1" max="${remaining}" value="${remaining}">
+        <button class="btn btn-accent btn-sm" id="btn-do-checkin" style="width:auto; white-space:nowrap;">确认入场</button>
+      </div>
+      ${buildLogHtml(ticket)}
+    </div>
+  `;
+
+  document.getElementById('btn-do-checkin').addEventListener('click', () => performCheckin(ticket.id));
+}
+
+function buildStatsHtml(ticket) {
+  const remaining = ticket.count - ticket.checkedIn;
+  return `
+    <div class="result-stats">
+      <div class="stat-item">
+        <div class="stat-num">${ticket.count}</div>
+        <div class="stat-lbl">总票数 Total</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">${ticket.checkedIn}</div>
+        <div class="stat-lbl">已入场 Used</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">${remaining}</div>
+        <div class="stat-lbl">剩余 Left</div>
+      </div>
+    </div>
+  `;
+}
+
+function buildLogHtml(ticket) {
+  if (!ticket.log || !ticket.log.length) return '';
+  const items = ticket.log.slice().reverse().slice(0, 3).map(l => {
+    const d = new Date(l.time);
+    const timeStr = d.toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+    const modeLabel = l.mode === 'quick' ? ' · quick' : '';
+    return `<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px; opacity:0.75;"><span>+${l.qty} 人入场${modeLabel}</span><span style="font-family:var(--font-mono);">${timeStr}</span></div>`;
+  }).join('');
+  return `<div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.08);"><div style="font-family:var(--font-mono); font-size:10px; letter-spacing:0.12em; opacity:0.6; margin-bottom:4px;">LOG</div>${items}</div>`;
+}
+
+function performCheckin(ticketId) {
+  const t = tickets.find(x => x.id === ticketId);
+  if (!t) return;
+  const qty = parseInt(document.getElementById('checkin-qty').value, 10);
+  const remaining = t.count - t.checkedIn;
+  if (!qty || qty < 1) { toast('请输入有效人数'); return; }
+  if (qty > remaining) { toast(`最多可入场 ${remaining} 人`); return; }
+  t.checkedIn += qty;
+  t.log = t.log || [];
+  t.log.push({ time: Date.now(), qty, mode: 'partial' });
+  saveTickets();
+  toast(`✓ ${qty} 人已入场`);
+  if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+  renderScanSuccess(t);
+}
+
+// Manual lookup
+document.getElementById('btn-manual-lookup').addEventListener('click', () => {
+  const id = prompt('请输入票据编号 (T-XXXXX-XXXXX)：');
+  if (!id) return;
+  const ticket = tickets.find(t => t.id === id.trim().toUpperCase());
+  if (!ticket) { renderScanError('未找到票据', id); return; }
+  renderScanSuccess(ticket);
+});
+
+// Tickets list
+function renderTicketsList() {
+  const list = document.getElementById('tickets-list');
+  document.getElementById('stat-issued').textContent = tickets.length;
+  const totalSeats = tickets.reduce((s, t) => s + t.count, 0);
+  const checkedSeats = tickets.reduce((s, t) => s + t.checkedIn, 0);
+  document.getElementById('stat-checked').textContent = checkedSeats;
+  document.getElementById('stat-total').textContent = totalSeats;
+
+  let filtered = tickets;
+  if (currentFilter === 'pending') filtered = tickets.filter(t => t.checkedIn === 0);
+  else if (currentFilter === 'partial') filtered = tickets.filter(t => t.checkedIn > 0 && t.checkedIn < t.count);
+  else if (currentFilter === 'complete') filtered = tickets.filter(t => t.checkedIn >= t.count);
+
+  document.getElementById('list-count').textContent = `── ${filtered.length} ${filtered.length === 1 ? 'record' : 'records'}`;
+
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state"><p>空</p><small>NO RECORDS</small></div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(t => {
+    const pct = t.count ? Math.min(100, (t.checkedIn / t.count) * 100) : 0;
+    const statusClass = t.checkedIn >= t.count ? 'status-complete' : (t.checkedIn > 0 ? 'status-partial' : 'status-pending');
+    const statusText = t.checkedIn >= t.count ? '完成' : (t.checkedIn > 0 ? '部分' : '待入');
+    return `
+      <div class="ticket-item" data-id="${t.id}">
+        <div class="ticket-item-main">
+          <div class="ticket-item-name">${escapeHtml(t.name)}</div>
+          <div class="ticket-item-id">${t.id}</div>
+          <div class="ticket-item-progress">
+            <span>${t.checkedIn}/${t.count}</span>
+            <div class="progress-bar">
+              <div class="progress-fill ${pct >= 100 ? 'full' : ''}" style="width:${pct}%"></div>
+            </div>
+          </div>
+        </div>
+        <span class="ticket-item-status ${statusClass}">${statusText}</span>
+      </div>
+    `;
+  }).join('');
+
+  list.querySelectorAll('.ticket-item').forEach(el => {
+    el.addEventListener('click', () => showTicketDetail(el.dataset.id));
+  });
+}
+
+function showTicketDetail(id) {
+  const t = tickets.find(x => x.id === id);
+  if (!t) return;
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-panel="scan"]').classList.add('active');
+  document.getElementById('panel-scan').classList.add('active');
+  renderScanSuccess(t);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    currentFilter = chip.dataset.filter;
+    renderTicketsList();
+  });
+});
+
+// Settings
+function loadEventToForm() {
+  document.getElementById('event-name').value = eventInfo.name || '';
+  document.getElementById('event-date').value = eventInfo.date || '';
+  document.getElementById('event-venue').value = eventInfo.venue || '';
+}
+
+document.getElementById('btn-save-event').addEventListener('click', () => {
+  eventInfo = {
+    name: document.getElementById('event-name').value.trim(),
+    date: document.getElementById('event-date').value,
+    venue: document.getElementById('event-venue').value.trim()
+  };
+  saveEvent();
+  toast('✓ 活动信息已保存');
+});
+
+document.getElementById('btn-export').addEventListener('click', () => {
+  const data = {
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    event: eventInfo,
+    tickets
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `tickets-backup-${stamp}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('✓ 已导出备份');
+});
+
+document.getElementById('btn-import').addEventListener('click', () => {
+  document.getElementById('import-file').click();
+});
+
+document.getElementById('import-file').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.tickets || !Array.isArray(data.tickets)) throw new Error('invalid');
+      const mergeMode = confirm(
+        `导入 ${data.tickets.length} 条记录？\n\n确定 = 合并（保留现有+添加新的）\n取消 = 覆盖（删除现有数据后导入）`
+      );
+      if (mergeMode) {
+        const existingIds = new Set(tickets.map(t => t.id));
+        data.tickets.forEach(t => { if (!existingIds.has(t.id)) tickets.push(t); });
+      } else {
+        const really = confirm('确定要覆盖所有现有数据吗？此操作无法撤销。');
+        if (!really) return;
+        tickets = data.tickets;
+      }
+      if (data.event) { eventInfo = data.event; saveEvent(); loadEventToForm(); }
+      saveTickets();
+      renderTicketsList();
+      toast('✓ 导入成功');
+    } catch(err) { toast('文件格式无效'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+document.getElementById('btn-clear-all').addEventListener('click', () => {
+  if (!tickets.length) { toast('暂无数据'); return; }
+  const really = confirm(`确定清空全部 ${tickets.length} 条票据记录吗？\n建议先导出备份。此操作无法撤销。`);
+  if (!really) return;
+  const confirm2 = prompt('请输入 DELETE 确认清空：');
+  if (confirm2 !== 'DELETE') { toast('已取消'); return; }
+  tickets = [];
+  saveTickets();
+  renderTicketsList();
+  toast('✓ 已清空');
+});
+
+// Init
+initModeUI();
+loadEventToForm();
+renderTicketsList();
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && scanning) stopScanner();
+});
+</script>
+
+</body>
+</html>
