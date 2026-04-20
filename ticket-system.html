@@ -7,8 +7,33 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+
+<!-- QR generator (qrcodejs) with CDN fallback -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>window.QRCode || document.write('<script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"><\/script>');</script>
+<script>window.QRCode || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>');</script>
+
+<!-- QR scanner (jsQR) with multi-CDN fallback -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>window.jsQR || document.write('<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"><\/script>');</script>
+<script>window.jsQR || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"><\/script>');</script>
+
+<!-- Library load check: show banner if anything failed -->
+<script>
+  window.addEventListener('DOMContentLoaded', function() {
+    const missing = [];
+    if (typeof QRCode === 'undefined') missing.push('QRCode (生成)');
+    if (typeof jsQR === 'undefined') missing.push('jsQR (扫描)');
+    if (missing.length) {
+      const banner = document.createElement('div');
+      banner.style.cssText = 'position:sticky;top:0;z-index:9999;background:#f5d5cc;color:#8b2f1e;padding:12px 16px;font-size:13px;border-bottom:2px solid #8b2f1e;';
+      banner.innerHTML = `<strong>⚠ 库加载失败:</strong> ${missing.join(', ')}<br>
+        <small style="opacity:0.8;">请检查网络连接，或换 Wi-Fi 再试。某些网络屏蔽了 CDN。</small>
+        <button onclick="location.reload()" style="margin-left:8px;padding:4px 10px;background:#8b2f1e;color:#fff;border:none;border-radius:3px;font-size:11px;">刷新重试</button>`;
+      document.body.insertBefore(banner, document.body.firstChild);
+    }
+  });
+</script>
 <style>
   :root {
     --ink: #1a1a1a;
