@@ -1356,34 +1356,104 @@ document.getElementById('btn-pick-image').addEventListener('click', () => {
 document.getElementById('pick-image-input').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
+
+  // Show loading state
+  const box = document.getElementById('scan-result');
+  box.innerHTML = `
+    <div class="scan-result" style="background: rgba(107, 127, 90, 0.1); border-color: var(--sage); color: var(--sage-dark);">
+      <div class="result-icon">⟳ DECODING</div>
+      <div class="result-title" style="font-size:18px;">正在识别图片…</div>
+      <div class="result-detail" id="pick-log" style="font-size:11px; font-family:var(--font-mono); white-space:pre-wrap;">
+文件: ${file.name}
+类型: ${file.type}
+大小: ${(file.size/1024).toFixed(1)} KB</div>
+    </div>
+  `;
+  const log = (msg) => {
+    const el = document.getElementById('pick-log');
+    if (el) el.textContent += '\n' + msg;
+  };
+
   const img = new Image();
   img.onload = () => {
-    const canvas = document.createElement('canvas');
-    // Downscale huge images for performance, keep aspect
-    const maxSide = 1400;
-    let w = img.width, h = img.height;
-    if (Math.max(w, h) > maxSide) {
-      const scale = maxSide / Math.max(w, h);
-      w = Math.round(w * scale);
-      h = Math.round(h * scale);
+    log(`原始尺寸: ${img.width}×${img.height}`);
+
+    const tryDecode = (targetSize) => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (targetSize && Math.max(w, h) > targetSize) {
+        const scale = targetSize / Math.max(w, h);
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
+      }
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // Try full frame
+      const imgData = ctx.getImageData(0, 0, w, h);
+      let code = jsQR(imgData.data, w, h, { inversionAttempts: 'attemptBoth' });
+      if (code) return { code, size: `${w}×${h}`, method: 'full' };
+
+      // Try center crops
+      for (const ratio of [0.9, 0.75, 0.6]) {
+        const side = Math.floor(Math.min(w, h) * ratio);
+        const cx = Math.floor((w - side) / 2);
+        const cy = Math.floor((h - side) / 2);
+        const crop = ctx.getImageData(cx, cy, side, side);
+        code = jsQR(crop.data, side, side, { inversionAttempts: 'attemptBoth' });
+        if (code) return { code, size: `${side}×${side}`, method: `crop ${ratio}` };
+      }
+      return null;
+    };
+
+    // Try multiple resolutions
+    const sizes = [null, 2000, 1400, 1000, 700];
+    let result = null;
+    for (const s of sizes) {
+      log(`尝试 ${s || 'original'}...`);
+      try {
+        result = tryDecode(s);
+        if (result) {
+          log(`✓ 识别成功 @ ${result.size} (${result.method})`);
+          break;
+        }
+      } catch(err) {
+        log(`  错误: ${err.message}`);
+      }
     }
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    ctx.drawImage(img, 0, 0, w, h);
-    const imgData = ctx.getImageData(0, 0, w, h);
-    // Try both inversion modes for robustness
-    let code = jsQR(imgData.data, w, h, { inversionAttempts: 'dontInvert' });
-    if (!code) code = jsQR(imgData.data, w, h, { inversionAttempts: 'attemptBoth' });
-    if (code && code.data) {
-      handleScanResult(code.data);
+
+    if (result && result.code && result.code.data) {
+      log(`数据前80字符: ${result.code.data.slice(0, 80)}`);
+      setTimeout(() => handleScanResult(result.code.data), 500);
     } else {
-      renderScanError('图片中未检测到二维码', '请换一张更清晰的图片');
+      // Show preview + all info so user can report back
+      const previewCanvas = document.createElement('canvas');
+      const maxPreview = 400;
+      const scale = maxPreview / Math.max(img.width, img.height);
+      previewCanvas.width = img.width * scale;
+      previewCanvas.height = img.height * scale;
+      previewCanvas.getContext('2d').drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
+      const previewUrl = previewCanvas.toDataURL('image/jpeg', 0.7);
+
+      const box = document.getElementById('scan-result');
+      const currentLog = document.getElementById('pick-log').textContent;
+      box.innerHTML = `
+        <div class="scan-result error">
+          <div class="result-icon">✕ DECODE FAILED</div>
+          <div class="result-title">图片中未检测到 QR</div>
+          <div class="result-detail" style="font-size:11px; font-family:var(--font-mono); white-space:pre-wrap;">${escapeHtml(currentLog)}</div>
+          <img src="${previewUrl}" style="width:100%; margin-top:10px; border-radius:4px; border:1px solid rgba(0,0,0,0.1);">
+          <div style="margin-top:8px; font-size:11px; opacity:0.7;">↑ 你选的图片（请确认 QR 清晰完整）</div>
+        </div>
+      `;
     }
     URL.revokeObjectURL(img.src);
   };
   img.onerror = () => {
-    renderScanError('图片读取失败', file.name);
+    log('✕ 图片读取失败 (可能是 HEIC 格式，需要先转换)');
+    renderScanError('图片读取失败', file.name + '\n\n如果是 iPhone HEIC 格式，请先转成 JPG：\n• 设置 → 相机 → 格式 → 兼容性最佳');
     URL.revokeObjectURL(img.src);
   };
   img.src = URL.createObjectURL(file);
