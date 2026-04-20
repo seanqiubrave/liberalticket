@@ -544,7 +544,31 @@ function formatDate(d) {
   catch(e) { return d; }
 }
 
-// Build QR payload with FULL info
+// Base URL used in QR codes. Points to the deployed site
+// so that admin can scan with any native camera app.
+const QR_BASE_URL = 'https://seanqiubrave.github.io/liberalticket/';
+
+// Encode object -> URL-safe base64
+function encodePayload(obj) {
+  const json = JSON.stringify(obj);
+  // UTF-8 safe base64 (handle Chinese characters)
+  const utf8 = unescape(encodeURIComponent(json));
+  const b64 = btoa(utf8);
+  // URL-safe: replace + / = with - _ (omit =)
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function decodePayload(str) {
+  try {
+    let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    const utf8 = atob(b64);
+    const json = decodeURIComponent(escape(utf8));
+    return JSON.parse(json);
+  } catch(e) { return null; }
+}
+
+// Build QR payload — now URL format, scannable by any camera
 function buildQRPayload(ticket) {
   const obj = {
     v: 1,
@@ -558,12 +582,28 @@ function buildQRPayload(ticket) {
   };
   if (ticket.note) obj.t = ticket.note;
   if (ticket.contact) obj.x = ticket.contact;
-  return 'TKT:' + JSON.stringify(obj);
+  return QR_BASE_URL + '?t=' + encodePayload(obj);
 }
 
 function parseQRPayload(raw) {
   if (!raw) return null;
   const s = String(raw).trim();
+
+  // Format 1 (new): URL with ?t= param
+  const urlMatch = s.match(/[?&]t=([^&\s]+)/);
+  if (urlMatch) {
+    const obj = decodePayload(urlMatch[1]);
+    if (obj && obj.v === 1 && obj.i && obj.n && obj.q) {
+      return {
+        id: obj.i, name: obj.n, count: obj.q,
+        event: obj.e || '', eventDate: obj.d || '', venue: obj.l || '',
+        note: obj.t || '', contact: obj.x || '',
+        createdAt: obj.c || Date.now(), fromQR: true
+      };
+    }
+  }
+
+  // Format 2 (legacy): TKT:{...}
   if (s.startsWith('TKT:')) {
     try {
       const obj = JSON.parse(s.slice(4));
@@ -577,9 +617,12 @@ function parseQRPayload(raw) {
       }
     } catch(e) {}
   }
+
+  // Format 3 (legacy): plain ticket ID
   if (/^T-[A-Z0-9]+-[A-Z0-9]+$/.test(s)) {
     return { id: s, fromQR: true, legacy: true };
   }
+
   return null;
 }
 
@@ -1358,6 +1401,27 @@ document.getElementById('btn-clear-all').addEventListener('click', () => {
 initModeUI();
 loadEventToForm();
 renderTicketsList();
+
+// ---------- Auto check-in from URL (?t=xxx) ----------
+// When admin scans the QR with a native camera, phone opens this URL.
+// We detect the ?t= param and jump straight to check-in.
+(function handleUrlPayload() {
+  const params = new URLSearchParams(location.search);
+  const t = params.get('t');
+  if (!t) return;
+  // Switch to scan panel
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-panel="scan"]').classList.add('active');
+  document.getElementById('panel-scan').classList.add('active');
+  // Process the payload through the same pipeline as a camera scan
+  setTimeout(() => {
+    handleScanResult(location.href);
+    // Clean up URL so refresh doesn't re-trigger
+    history.replaceState({}, document.title, location.pathname);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 100);
+})();
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && scanning) stopScanner();
