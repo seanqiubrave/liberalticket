@@ -411,6 +411,8 @@
 
   <button class="btn btn-primary" id="btn-scan-toggle">开始扫描 · Start Scanning</button>
 
+  <button class="btn btn-ghost btn-sm" id="btn-snap-once" style="margin-top:10px; display:none;">拍一张 · Snap & Decode</button>
+
   <div class="divider"><span class="divider-text">或 / Or</span></div>
 
   <button class="btn btn-ghost" id="btn-pick-image" style="margin-bottom:10px;">从相册选择图片 · Pick from Album</button>
@@ -963,6 +965,7 @@ Step 1: 检查浏览器支持...</div>
     scanning = true;
     document.getElementById('scanner-placeholder').classList.add('hidden');
     document.getElementById('scanner-wrap').classList.remove('hidden');
+    document.getElementById('btn-snap-once').style.display = 'inline-flex';
     scanBtn.textContent = '停止扫描 · Stop';
     scanBtn.classList.remove('btn-primary');
     scanBtn.classList.add('btn-ghost');
@@ -1044,10 +1047,73 @@ function stopScanner() {
   }
   document.getElementById('scanner-placeholder').classList.remove('hidden');
   document.getElementById('scanner-wrap').classList.add('hidden');
+  document.getElementById('btn-snap-once').style.display = 'none';
   scanBtn.textContent = '开始扫描 · Start Scanning';
   scanBtn.classList.remove('btn-ghost');
   scanBtn.classList.add('btn-primary');
 }
+
+// Snap once - take a single high-quality frame and decode it with full effort
+document.getElementById('btn-snap-once').addEventListener('click', () => {
+  if (!scanning) return;
+  const video = document.getElementById('scanner-video');
+  const canvas = document.getElementById('scanner-canvas');
+  const vw = video.videoWidth, vh = video.videoHeight;
+  canvas.width = vw; canvas.height = vh;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(video, 0, 0, vw, vh);
+
+  const attempts = [];
+  // 1. Full frame, both inversions
+  let code = jsQR(ctx.getImageData(0,0,vw,vh).data, vw, vh, { inversionAttempts: 'attemptBoth' });
+  attempts.push('full: ' + (code ? 'FOUND' : 'no'));
+
+  // 2. Multiple center crops at different sizes
+  const crops = [0.9, 0.75, 0.6, 0.5];
+  for (const ratio of crops) {
+    if (code) break;
+    const side = Math.floor(Math.min(vw, vh) * ratio);
+    const cx = Math.floor((vw - side) / 2);
+    const cy = Math.floor((vh - side) / 2);
+    code = jsQR(ctx.getImageData(cx, cy, side, side).data, side, side, { inversionAttempts: 'attemptBoth' });
+    attempts.push(`crop ${ratio}: ` + (code ? 'FOUND' : 'no'));
+  }
+
+  // 3. Contrast-enhanced full frame
+  if (!code) {
+    const enh = ctx.getImageData(0, 0, vw, vh);
+    const d = enh.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const gray = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+      const val = gray > 128 ? 255 : 0;
+      d[i] = d[i+1] = d[i+2] = val;
+    }
+    code = jsQR(d, vw, vh, { inversionAttempts: 'attemptBoth' });
+    attempts.push('enhanced: ' + (code ? 'FOUND' : 'no'));
+  }
+
+  if (code && code.data) {
+    lastScanTime = Date.now();
+    handleScanResult(code.data);
+  } else {
+    // Show the debug box with what we tried and screenshot preview
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+    const box = document.getElementById('scan-result');
+    box.innerHTML = `
+      <div class="scan-result error">
+        <div class="result-icon">✕ DECODE FAILED</div>
+        <div class="result-title">本帧未识别到 QR</div>
+        <div class="result-detail" style="font-size:12px; font-family:var(--font-mono);">
+${attempts.join('\n')}
+
+分辨率: ${vw}×${vh}
+尝试姿势: 稳住、离远点、多光线</div>
+        <img src="${dataUrl}" style="width:100%; margin-top:10px; border-radius:4px; border:1px solid rgba(0,0,0,0.1);">
+        <div style="margin-top:8px; font-size:11px; opacity:0.7;">这是拍到的画面，你可以判断是不是 QR 够清晰</div>
+      </div>
+    `;
+  }
+});
 
 let scanAttempts = 0;
 let scanStartTime = 0;
@@ -1084,7 +1150,6 @@ function scanLoop() {
         const enhanced = ctx.getImageData(0, 0, vw, vh);
         const d = enhanced.data;
         for (let i = 0; i < d.length; i += 4) {
-          // Convert to grayscale + threshold-ish enhance
           const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
           const val = gray > 128 ? 255 : 0;
           d[i] = d[i+1] = d[i+2] = val;
@@ -1092,12 +1157,12 @@ function scanLoop() {
         code = jsQR(d, vw, vh, { inversionAttempts: 'attemptBoth' });
       }
 
-      // Update the status ticker every 30 frames (~1 sec)
-      if (scanAttempts % 30 === 0) {
+      // Update status every ~15 frames (~0.5s). Show counter + resolution.
+      if (scanAttempts % 15 === 0) {
         const elapsed = Math.floor((Date.now() - scanStartTime) / 1000);
         const statusEl = document.getElementById('scan-status-text');
         if (statusEl) {
-          statusEl.innerHTML = `正在扫描中… · ${scanAttempts} frames · ${elapsed}s`;
+          statusEl.textContent = `扫描中 · ${scanAttempts}帧 · ${elapsed}s · ${vw}×${vh}`;
         }
       }
 
