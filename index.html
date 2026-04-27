@@ -931,12 +931,17 @@ function renderQR(ticket) {
       <div class="ticket-id">${ticket.id}</div>
     </div>
 
-    <!-- Big primary share button -->
+    <!-- Big primary share button - sends both image + message -->
     <button class="btn btn-accent" id="btn-share-primary" style="margin-top:18px;">
-      Send to Guest
+      📤  Send Ticket to Guest
     </button>
+    <div style="text-align:center; margin-top:6px; font-size:12px; color:var(--muted); font-family:var(--font-mono); letter-spacing:0.05em;">
+      Sends QR image + message via WhatsApp / Email / etc.
+    </div>
 
-    <!-- Quick share row -->
+    <div class="divider"><span class="divider-text">or send message only</span></div>
+
+    <!-- Quick share row - text-only message variants -->
     <div class="share-grid">
       <button class="share-chip" id="btn-share-whatsapp" data-method="whatsapp">
         <span class="share-icon">💬</span>
@@ -951,14 +956,14 @@ function renderQR(ticket) {
         <span>Email</span>
       </button>
       <button class="share-chip" id="btn-share-copy" data-method="copy">
-        <span class="share-icon">🔗</span>
-        <span>Copy Link</span>
+        <span class="share-icon">📋</span>
+        <span>Copy Text</span>
       </button>
     </div>
 
     <div class="action-row" style="margin-top:14px;">
-      <button class="btn btn-ghost btn-sm" id="btn-download-qr">Download Image</button>
-      <button class="btn btn-ghost btn-sm" id="btn-share-image">Share Image</button>
+      <button class="btn btn-ghost btn-sm" id="btn-download-qr">⬇ Save QR Image</button>
+      <button class="btn btn-ghost btn-sm" id="btn-share-image">🖼 Share Image Only</button>
     </div>
   `;
 
@@ -995,11 +1000,10 @@ async function downloadTicket(ticket) {
 
 // Build a friendly message body with all ticket info
 function buildShareMessage(ticket) {
-  const url = buildQRPayload(ticket);
   const lines = [];
   lines.push(`Hi ${ticket.name},`);
   lines.push('');
-  lines.push(`Here is your ticket${ticket.count > 1 ? 's' : ''} for ${ticket.event || 'the event'}:`);
+  lines.push(`Here ${ticket.count > 1 ? 'are your tickets' : 'is your ticket'} for ${ticket.event || 'the event'}:`);
   lines.push('');
   lines.push(`👤 Guest: ${ticket.name}`);
   lines.push(`🎫 Admits: ${ticket.count} ${ticket.count > 1 ? 'people' : 'person'}`);
@@ -1008,8 +1012,7 @@ function buildShareMessage(ticket) {
   if (ticket.venue) lines.push(`📍 Venue: ${ticket.venue}`);
   if (ticket.note) lines.push(`📝 Note: ${ticket.note}`);
   lines.push('');
-  lines.push(`Tap this link at the entrance:`);
-  lines.push(url);
+  lines.push(`Please show the QR code at the entrance for check-in.`);
   lines.push('');
   lines.push(`Ticket ID: ${ticket.id}`);
   return lines.join('\n');
