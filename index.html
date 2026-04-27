@@ -191,6 +191,38 @@
   }
   .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
 
+  /* ===== Share grid ===== */
+  .share-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .share-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 12px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .share-chip:active {
+    transform: scale(0.97);
+    background: var(--paper-warm);
+  }
+  .share-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+
   /* ===== Scanner ===== */
   .scanner-wrap {
     position: relative; background: var(--ink); border-radius: 3px;
@@ -554,8 +586,8 @@
       <input type="number" class="form-input" id="ticket-count" value="1" min="1" max="20">
     </div>
     <div class="form-group">
-      <label class="form-label">Contact</label>
-      <input type="text" class="form-input" id="parent-contact" placeholder="Optional" autocomplete="off">
+      <label class="form-label">Contact (Phone or Email)</label>
+      <input type="text" class="form-input" id="parent-contact" placeholder="e.g. +6591234567 or me@email.com" autocomplete="off">
     </div>
   </div>
   <div class="form-group">
@@ -898,9 +930,35 @@ function renderQR(ticket) {
       ${ticket.note ? `<div style="margin-top:12px; font-size:13px; color:var(--muted); font-style:italic;">${escapeHtml(ticket.note)}</div>` : ''}
       <div class="ticket-id">${ticket.id}</div>
     </div>
-    <div class="action-row">
-      <button class="btn btn-ghost btn-sm" id="btn-download-qr">Download</button>
-      <button class="btn btn-ghost btn-sm" id="btn-share-qr">Share</button>
+
+    <!-- Big primary share button -->
+    <button class="btn btn-accent" id="btn-share-primary" style="margin-top:18px;">
+      Send to Guest
+    </button>
+
+    <!-- Quick share row -->
+    <div class="share-grid">
+      <button class="share-chip" id="btn-share-whatsapp" data-method="whatsapp">
+        <span class="share-icon">💬</span>
+        <span>WhatsApp</span>
+      </button>
+      <button class="share-chip" id="btn-share-sms" data-method="sms">
+        <span class="share-icon">📱</span>
+        <span>SMS</span>
+      </button>
+      <button class="share-chip" id="btn-share-email" data-method="email">
+        <span class="share-icon">📧</span>
+        <span>Email</span>
+      </button>
+      <button class="share-chip" id="btn-share-copy" data-method="copy">
+        <span class="share-icon">🔗</span>
+        <span>Copy Link</span>
+      </button>
+    </div>
+
+    <div class="action-row" style="margin-top:14px;">
+      <button class="btn btn-ghost btn-sm" id="btn-download-qr">Download Image</button>
+      <button class="btn btn-ghost btn-sm" id="btn-share-image">Share Image</button>
     </div>
   `;
 
@@ -911,8 +969,13 @@ function renderQR(ticket) {
     correctLevel: QRCode.CorrectLevel.M
   });
 
+  document.getElementById('btn-share-primary').addEventListener('click', () => sharePrimary(ticket));
+  document.getElementById('btn-share-whatsapp').addEventListener('click', () => shareViaMethod(ticket, 'whatsapp'));
+  document.getElementById('btn-share-sms').addEventListener('click', () => shareViaMethod(ticket, 'sms'));
+  document.getElementById('btn-share-email').addEventListener('click', () => shareViaMethod(ticket, 'email'));
+  document.getElementById('btn-share-copy').addEventListener('click', () => shareViaMethod(ticket, 'copy'));
   document.getElementById('btn-download-qr').addEventListener('click', () => downloadTicket(ticket));
-  document.getElementById('btn-share-qr').addEventListener('click', () => shareTicket(ticket));
+  document.getElementById('btn-share-image').addEventListener('click', () => shareTicket(ticket));
 
   setTimeout(() => out.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
 }
@@ -928,6 +991,138 @@ async function downloadTicket(ticket) {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast('✓ Image downloaded');
   }, 'image/png');
+}
+
+// Build a friendly message body with all ticket info
+function buildShareMessage(ticket) {
+  const url = buildQRPayload(ticket);
+  const lines = [];
+  lines.push(`Hi ${ticket.name},`);
+  lines.push('');
+  lines.push(`Here is your ticket${ticket.count > 1 ? 's' : ''} for ${ticket.event || 'the event'}:`);
+  lines.push('');
+  lines.push(`👤 Guest: ${ticket.name}`);
+  lines.push(`🎫 Admits: ${ticket.count} ${ticket.count > 1 ? 'people' : 'person'}`);
+  if (ticket.eventDate) lines.push(`📅 Date: ${formatDate(ticket.eventDate)}`);
+  if (ticket.session) lines.push(`🕐 Time: ${ticket.session}`);
+  if (ticket.venue) lines.push(`📍 Venue: ${ticket.venue}`);
+  if (ticket.note) lines.push(`📝 Note: ${ticket.note}`);
+  lines.push('');
+  lines.push(`Tap this link at the entrance:`);
+  lines.push(url);
+  lines.push('');
+  lines.push(`Ticket ID: ${ticket.id}`);
+  return lines.join('\n');
+}
+
+function buildShareSubject(ticket) {
+  return `Your ticket for ${ticket.event || 'the event'} (${ticket.name})`;
+}
+
+// Primary share — try Web Share API with image, fallback to text-only
+async function sharePrimary(ticket) {
+  const message = buildShareMessage(ticket);
+  const title = buildShareSubject(ticket);
+
+  // Try Web Share Level 2 (with image file)
+  try {
+    const canvas = await renderTicketCanvas(ticket);
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    const file = new File([blob], `ticket-${ticket.id}.png`, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title,
+        text: message
+      });
+      toast('✓ Shared');
+      return;
+    }
+  } catch(e) {
+    if (e.name === 'AbortError') return; // user cancelled
+    // fall through to other methods
+  }
+
+  // Fallback: text-only share
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text: message });
+      toast('✓ Shared');
+      return;
+    } catch(e) {
+      if (e.name === 'AbortError') return;
+    }
+  }
+
+  // Last resort: copy
+  shareViaMethod(ticket, 'copy');
+}
+
+// Detect if contact is phone or email
+function detectContact(contact) {
+  if (!contact) return { type: 'none', value: '' };
+  const c = contact.trim();
+  // Phone: starts with + or only digits/spaces/dashes
+  if (/^\+?[\d\s\-()]{6,}$/.test(c)) {
+    return { type: 'phone', value: c.replace(/[\s\-()]/g, '') };
+  }
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) {
+    return { type: 'email', value: c };
+  }
+  return { type: 'unknown', value: c };
+}
+
+// Per-channel share methods
+async function shareViaMethod(ticket, method) {
+  const message = buildShareMessage(ticket);
+  const subject = buildShareSubject(ticket);
+  const url = buildQRPayload(ticket);
+  const contact = detectContact(ticket.contact);
+
+  switch(method) {
+    case 'whatsapp': {
+      // wa.me/{phone}?text=... — if we have phone, target it directly
+      const target = contact.type === 'phone' ? contact.value.replace(/\D/g, '') : '';
+      const waUrl = `https://wa.me/${target}?text=${encodeURIComponent(message)}`;
+      window.open(waUrl, '_blank');
+      toast(target ? `Opening WhatsApp to ${ticket.contact}...` : 'Opening WhatsApp...');
+      break;
+    }
+    case 'sms': {
+      const target = contact.type === 'phone' ? contact.value : '';
+      // iOS uses sms:NUMBER&body=, Android uses sms:NUMBER?body=. Use both for compatibility
+      const smsUrl = target
+        ? `sms:${target}${/iPhone|iPad|iPod/.test(navigator.userAgent) ? '&' : '?'}body=${encodeURIComponent(message)}`
+        : `sms:?&body=${encodeURIComponent(message)}`;
+      window.location.href = smsUrl;
+      toast(target ? `Opening Messages to ${ticket.contact}...` : 'Opening Messages...');
+      break;
+    }
+    case 'email': {
+      const target = contact.type === 'email' ? contact.value : '';
+      const mailUrl = `mailto:${target}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+      window.location.href = mailUrl;
+      toast(target ? `Opening email to ${target}...` : 'Opening email...');
+      break;
+    }
+    case 'copy': {
+      try {
+        await navigator.clipboard.writeText(message);
+        toast('✓ Ticket info copied to clipboard');
+      } catch(e) {
+        const ta = document.createElement('textarea');
+        ta.value = message;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); toast('✓ Copied'); }
+        catch(err) { toast('Copy failed — please copy manually'); }
+        document.body.removeChild(ta);
+      }
+      break;
+    }
+  }
 }
 
 async function shareTicket(ticket) {
