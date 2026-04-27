@@ -939,27 +939,12 @@ function renderQR(ticket) {
       Sends QR image + message via WhatsApp / Email / etc.
     </div>
 
-    <div class="divider"><span class="divider-text">or send message only</span></div>
+    <div class="divider"><span class="divider-text">or</span></div>
 
-    <!-- Quick share row - text-only message variants -->
-    <div class="share-grid">
-      <button class="share-chip" id="btn-share-whatsapp" data-method="whatsapp">
-        <span class="share-icon">💬</span>
-        <span>WhatsApp</span>
-      </button>
-      <button class="share-chip" id="btn-share-sms" data-method="sms">
-        <span class="share-icon">📱</span>
-        <span>SMS</span>
-      </button>
-      <button class="share-chip" id="btn-share-email" data-method="email">
-        <span class="share-icon">📧</span>
-        <span>Email</span>
-      </button>
-      <button class="share-chip" id="btn-share-copy" data-method="copy">
-        <span class="share-icon">📋</span>
-        <span>Copy Text</span>
-      </button>
-    </div>
+    <button class="btn btn-ghost" id="btn-share-whatsapp" style="display:flex; align-items:center; justify-content:center; gap:10px;">
+      <span style="font-size:20px;">💬</span>
+      <span>Send via WhatsApp</span>
+    </button>
 
     <div class="action-row" style="margin-top:14px;">
       <button class="btn btn-ghost btn-sm" id="btn-download-qr">⬇ Save QR Image</button>
@@ -976,9 +961,6 @@ function renderQR(ticket) {
 
   document.getElementById('btn-share-primary').addEventListener('click', () => sharePrimary(ticket));
   document.getElementById('btn-share-whatsapp').addEventListener('click', () => shareViaMethod(ticket, 'whatsapp'));
-  document.getElementById('btn-share-sms').addEventListener('click', () => shareViaMethod(ticket, 'sms'));
-  document.getElementById('btn-share-email').addEventListener('click', () => shareViaMethod(ticket, 'email'));
-  document.getElementById('btn-share-copy').addEventListener('click', () => shareViaMethod(ticket, 'copy'));
   document.getElementById('btn-download-qr').addEventListener('click', () => downloadTicket(ticket));
   document.getElementById('btn-share-image').addEventListener('click', () => shareTicket(ticket));
 
