@@ -712,7 +712,7 @@
   <div class="settings-section">
     <div class="settings-title">Event Details</div>
     <div class="settings-desc">This information will be embedded in every QR code and shown when scanning.</div>
-    <input type="text" class="event-title-big" id="event-name" placeholder="Enter event name..." autocomplete="off">
+    <input type="text" class="event-title-big" id="event-name" placeholder="Liberal Music Concert 2026" autocomplete="off">
     <div class="form-row" style="margin-top:12px;">
       <div class="form-group" style="margin:0;">
         <label class="form-label">Date</label>
@@ -784,9 +784,28 @@ function loadTickets() {
 }
 function saveTickets() { localStorage.setItem(STORE_KEY, JSON.stringify(tickets)); }
 
+// Default event info — auto-filled for new users
+const DEFAULT_EVENT = {
+  name: 'Liberal Music Concert 2026',
+  date: '2026-05-21',
+  venue: 'Esplanade Recital Studio, 1 Esplanade Drive, Singapore 038981',
+  session: '7:00 PM'
+};
+
 function loadEvent() {
-  try { const raw = localStorage.getItem(EVENT_KEY); return raw ? JSON.parse(raw) : { name:'', date:'', venue:'', session:'' }; }
-  catch(e) { return { name:'', date:'', venue:'', session:'' }; }
+  try {
+    const raw = localStorage.getItem(EVENT_KEY);
+    if (!raw) return { ...DEFAULT_EVENT };
+    const saved = JSON.parse(raw);
+    // If user has previously saved values, keep them; otherwise fall back to defaults
+    return {
+      name: saved.name || DEFAULT_EVENT.name,
+      date: saved.date || DEFAULT_EVENT.date,
+      venue: saved.venue || DEFAULT_EVENT.venue,
+      session: saved.session || DEFAULT_EVENT.session
+    };
+  }
+  catch(e) { return { ...DEFAULT_EVENT }; }
 }
 function saveEvent() { localStorage.setItem(EVENT_KEY, JSON.stringify(eventInfo)); }
 
