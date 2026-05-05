@@ -165,6 +165,14 @@
     padding-bottom: 18px; margin-bottom: 18px;
   }
   .ticket-event { font-family: var(--font-display); font-size: 22px; font-weight: 700; line-height: 1.15; margin-bottom: 6px; letter-spacing: -0.01em; }
+  .ticket-meta-venue {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink); font-weight: 700; margin-bottom: 2px;
+  }
+  .ticket-meta-address {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); line-height: 1.4; margin-bottom: 4px;
+  }
   .ticket-meta {
     font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em;
     text-transform: uppercase; color: var(--muted);
@@ -956,16 +964,35 @@ function generateTicket() {
 function renderQR(ticket) {
   const payload = buildQRPayload(ticket);
   const out = document.getElementById('qr-output');
-  const metaParts = [];
-  if (ticket.eventDate) metaParts.push(formatDate(ticket.eventDate));
-  if (ticket.session) metaParts.push(ticket.session);
-  if (ticket.venue) metaParts.push(ticket.venue);
+
+  // Split venue into name + address (split at first comma)
+  let venueName = '', venueAddress = '';
+  if (ticket.venue) {
+    const idx = ticket.venue.indexOf(',');
+    if (idx > -1) {
+      venueName = ticket.venue.slice(0, idx).trim();
+      venueAddress = ticket.venue.slice(idx + 1).trim();
+    } else {
+      venueName = ticket.venue.trim();
+    }
+  }
+
+  const dateTimeParts = [];
+  if (ticket.eventDate) dateTimeParts.push(formatDate(ticket.eventDate));
+  if (ticket.session) dateTimeParts.push(ticket.session);
+
+  // Build the meta block: venue name (line 1), address (line 2), date · time (line 3)
+  let metaHtml = '';
+  if (venueName) metaHtml += `<div class="ticket-meta-venue">${escapeHtml(venueName.toUpperCase())}</div>`;
+  if (venueAddress) metaHtml += `<div class="ticket-meta-address">${escapeHtml(venueAddress.toUpperCase())}</div>`;
+  if (dateTimeParts.length) metaHtml += `<div class="ticket-meta">${escapeHtml(dateTimeParts.join(' · '))}</div>`;
+  if (!metaHtml) metaHtml = '<div class="ticket-meta">ADMIT ALL</div>';
 
   out.innerHTML = `
     <div class="ticket-card">
       <div class="ticket-header">
         <div class="ticket-event">${escapeHtml(ticket.event) || 'Event Pass'}</div>
-        <div class="ticket-meta">${metaParts.length ? escapeHtml(metaParts.join(' · ')) : 'ADMIT ALL'}</div>
+        ${metaHtml}
       </div>
       <div class="qr-container" id="qr-target"></div>
       <div class="ticket-info">
@@ -1237,24 +1264,98 @@ function renderTicketCanvas(ticket) {
 
     ctx.fillStyle = '#1a1a1a';
     ctx.textAlign = 'center';
-    ctx.font = 'bold 38px Arial, Helvetica, sans-serif';
-    const title = ticket.event || 'Event Pass';
-    ctx.fillText(title, W/2, 130);
 
-    ctx.font = 'bold 13px "Courier New", monospace';
+    // === Title: auto-fit to 2 lines if needed ===
+    const title = (ticket.event || 'Event Pass').toUpperCase();
+    const titleMaxWidth = W - pad*2 - 30;
+    let titleSize = 36;
+    ctx.font = `bold ${titleSize}px Arial, Helvetica, sans-serif`;
+    while (ctx.measureText(title).width > titleMaxWidth && titleSize > 22) {
+      titleSize -= 2;
+      ctx.font = `bold ${titleSize}px Arial, Helvetica, sans-serif`;
+    }
+    let titleY = 120;
+    if (ctx.measureText(title).width > titleMaxWidth) {
+      // wrap into 2 lines
+      const lines = wrapByWords(ctx, title, titleMaxWidth);
+      lines.slice(0, 2).forEach((line, i) => {
+        ctx.fillText(line, W/2, titleY + i * (titleSize + 4));
+      });
+      titleY += (Math.min(lines.length, 2) - 1) * (titleSize + 4);
+    } else {
+      ctx.fillText(title, W/2, titleY);
+    }
+
+    // === Sub-meta: venue name on line 1, address/date/time on line 2 ===
+    ctx.font = 'bold 12px "Courier New", monospace';
     ctx.fillStyle = '#8a8578';
-    const subParts = [];
-    if (ticket.eventDate) subParts.push(formatDate(ticket.eventDate).toUpperCase());
-    if (ticket.session) subParts.push(ticket.session.toUpperCase());
-    if (ticket.venue) subParts.push(ticket.venue.toUpperCase());
-    if (!subParts.length) subParts.push('ADMIT ALL');
-    ctx.fillText(subParts.join('  ·  '), W/2, 160);
 
-    drawDashed(ctx, pad + 30, 190, W - pad - 30, 190);
+    // Split venue into name (before first comma) + rest
+    let venueName = '', venueAddress = '';
+    if (ticket.venue) {
+      const idx = ticket.venue.indexOf(',');
+      if (idx > -1) {
+        venueName = ticket.venue.slice(0, idx).trim();
+        venueAddress = ticket.venue.slice(idx + 1).trim();
+      } else {
+        venueName = ticket.venue.trim();
+      }
+    }
 
-    const qrSize = 320;
+    const dateTimeParts = [];
+    if (ticket.eventDate) dateTimeParts.push(formatDate(ticket.eventDate).toUpperCase());
+    if (ticket.session) dateTimeParts.push(ticket.session.toUpperCase());
+
+    let metaY = titleY + 26;
+    let drewMeta = false;
+
+    // Line 1: venue name (bigger / bolder)
+    if (venueName) {
+      ctx.font = 'bold 13px "Courier New", monospace';
+      ctx.fillText(venueName.toUpperCase(), W/2, metaY);
+      metaY += 16;
+      drewMeta = true;
+    }
+
+    // Line 2: address (if any)
+    if (venueAddress) {
+      ctx.font = 'bold 11px "Courier New", monospace';
+      const addrUpper = venueAddress.toUpperCase();
+      const addrMaxWidth = W - pad*2 - 40;
+      if (ctx.measureText(addrUpper).width > addrMaxWidth) {
+        const addrLines = wrapByWords(ctx, addrUpper, addrMaxWidth);
+        addrLines.slice(0, 2).forEach((line, i) => {
+          ctx.fillText(line, W/2, metaY + i * 14);
+        });
+        metaY += Math.min(addrLines.length, 2) * 14;
+      } else {
+        ctx.fillText(addrUpper, W/2, metaY);
+        metaY += 16;
+      }
+      drewMeta = true;
+    }
+
+    // Line 3: date · time
+    if (dateTimeParts.length) {
+      ctx.font = 'bold 12px "Courier New", monospace';
+      ctx.fillText(dateTimeParts.join('  ·  '), W/2, metaY);
+      metaY += 16;
+      drewMeta = true;
+    }
+
+    if (!drewMeta) {
+      ctx.font = 'bold 13px "Courier New", monospace';
+      ctx.fillText('ADMIT ALL', W/2, metaY);
+      metaY += 16;
+    }
+
+    // Dashed divider below the header block
+    const dividerY = metaY + 8;
+    drawDashed(ctx, pad + 30, dividerY, W - pad - 30, dividerY);
+
+    const qrSize = 300;
     const qrX = (W - qrSize) / 2;
-    const qrY = 220;
+    const qrY = dividerY + 25;
 
     const payload = buildQRPayload(ticket);
     const temp = document.createElement('div');
@@ -1339,6 +1440,24 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   }
   if (line) lines.push(line);
   lines.slice(0, 2).forEach((ln, i) => ctx.fillText(ln, x, y + i * lineHeight));
+}
+
+// Wrap by words — returns array of lines, doesn't draw. Used for measuring.
+function wrapByWords(ctx, text, maxWidth) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
 }
 
 // Mode toggle
