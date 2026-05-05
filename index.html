@@ -761,6 +761,14 @@ const STORE_KEY = 'ticket_sys_v2';
 const EVENT_KEY = 'ticket_sys_event_v2';
 const MODE_KEY = 'ticket_sys_mode_v2';
 
+// Default event info — auto-filled for new users
+const DEFAULT_EVENT = {
+  name: 'Liberal Music Concert 2026',
+  date: '2026-05-21',
+  venue: 'Esplanade Recital Studio, 1 Esplanade Drive, Singapore 038981',
+  session: '7:00 PM'
+};
+
 let tickets = loadTickets();
 let eventInfo = loadEvent();
 let currentFilter = 'all';
@@ -783,14 +791,6 @@ function loadTickets() {
   catch(e) { return []; }
 }
 function saveTickets() { localStorage.setItem(STORE_KEY, JSON.stringify(tickets)); }
-
-// Default event info — auto-filled for new users
-const DEFAULT_EVENT = {
-  name: 'Liberal Music Concert 2026',
-  date: '2026-05-21',
-  venue: 'Esplanade Recital Studio, 1 Esplanade Drive, Singapore 038981',
-  session: '7:00 PM'
-};
 
 function loadEvent() {
   try {
